@@ -6,5 +6,8 @@ public:
 	virtual bool init();
 	static cocos2d::Layer* CreateCarrots();
 	void MoveforCarrots(float dt);
+	//void stopAnimation();
+	//Sprite* animateSprite;
 	CREATE_FUNC(Carrots);
+	enum ActionTag;
 };

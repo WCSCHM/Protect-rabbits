@@ -7,6 +7,10 @@ Layer* Carrots::CreateCarrots()
 {
     return Carrots::create();
 }
+enum ActionTag 
+{
+    ACTION_ANIMATE_TAG1 = 100,
+};
 // Print useful error message instead of segfaulting when files are not there.
 static void problemLoading(const char* filename)
 {
@@ -32,7 +36,7 @@ void Carrots::MoveforCarrots(float dt)
     SpriteFrameCache::getInstance()->addSpriteFramesWithFile("carrots.plist");
     Vector<SpriteFrame*> animFrames;
     char str[30];
-    for (int i = 21; i <= 23; i++)
+    for (int i = 9; i <= 11; i++)
     {
         sprintf(str, "hlb1_%d.png", i);
         SpriteFrame* frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(str);
@@ -44,5 +48,13 @@ void Carrots::MoveforCarrots(float dt)
     sprite->setPosition(830, 520);
     this->addChild(sprite);
     auto animate = Animate::create(animation);
+    animate->setTag(ACTION_ANIMATE_TAG1); // 设置动作标签
     sprite->runAction(RepeatForever::create(animate));
 }
+/*void Carrots::stopAnimation()
+{
+    if (animateSprite)
+    {
+        animateSprite->stopAllActions();
+    }
+}*/
