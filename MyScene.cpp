@@ -1,10 +1,11 @@
 #include "MyScene.h"
-#include"Map.h"
 #include"Tower.h";
 #include"Bullet.h"
 #include<utility>
 #include<vector>
 #include<math.h>
+#include"monster.h"
+#include"Carrots.h"
 using namespace std;
 USING_NS_CC;
 Scene* MyScene::createScene()
@@ -154,11 +155,7 @@ bool MyScene::init()
     auto Path1 = Sprite::create("Path1.png");
     Path1->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
     this->addChild(Path1, 1);
-    //  CCLOG("x=%f", visibleSize.width);
-      //在地图终点处放置一个萝卜
-    auto nhSprite = Sprite::create("whole_carrot_1.png");
-    nhSprite->setPosition(Vec2(832 * scaleX, 525 * scaleY));
-    this->addChild(nhSprite, 2);
+    
 
     //在地图起点处放置标志物
     auto fflag = Sprite::create("start01.png");
@@ -198,7 +195,136 @@ bool MyScene::init()
 
     auto blank = Sprite::create("select_01.png");
     dsh_blank = blank->getTextureRect().size.height;
-
+    //初始化拐点
+    std::pair<float, float>p1(130 * scaleX, 435 * scaleY + dsh / 2.0f);
+    std::pair<float, float>p2(275 * scaleX, 435 * scaleY + dsh / 2.0f);
+    std::pair<float, float>p3(275 * scaleX, 155 * scaleY + dsh / 2.0f);
+    std::pair<float, float>p4(695 * scaleX, 155 * scaleY + dsh / 2.0f);
+    std::pair<float, float>p5(695 * scaleX, 435 * scaleY + dsh / 2.0f);
+    std::pair<float, float>p6(832 * scaleX, 435 * scaleY + dsh / 2.0f);
+    //拐点
+    InflectionPoint.push_back(p1);
+    InflectionPoint.push_back(p2);
+    InflectionPoint.push_back(p3);
+    InflectionPoint.push_back(p4);
+    InflectionPoint.push_back(p5);
+    InflectionPoint.push_back(p6);
+    //放置萝卜
+    // //萝卜的移动
+    auto carrotsLayer = Carrots::create();
+    carrotsLayer->MoveforCarrots(0.0);
+    this->addChild(carrotsLayer, 1);
+    //萝卜血量
+    //10
+    auto carrotsblo10 = Sprite::create("carrotsblo10.png");
+    carrotsblo10->setPosition(832,525);
+    this->addChild(carrotsblo10, 10);
+    auto scalemove10 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo10->runAction(scalemove10);
+    //9
+    auto carrotsblo9 = Sprite::create("carrotsblo9.png");
+    carrotsblo9->setPosition(832, 525);
+    this->addChild(carrotsblo9, 9);
+    auto scalemove9 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo9->runAction(scalemove9);
+    carrotsblo9->setVisible(false);
+    //8
+    auto carrotsblo8 = Sprite::create("carrotsblo8.png");
+    carrotsblo8->setPosition(832, 525);
+    this->addChild(carrotsblo8, 8);
+    auto scalemove8 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo8->runAction(scalemove8);
+    carrotsblo8->setVisible(false);
+    //7
+    auto carrotsblo7 = Sprite::create("carrotsblo7.png");
+    carrotsblo7->setPosition(832, 525);
+    this->addChild(carrotsblo7, 7);
+    auto scalemove7 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo7->runAction(scalemove7);
+    carrotsblo7->setVisible(false);
+    //6
+    auto carrotsblo6 = Sprite::create("carrotsblo6.png");
+    carrotsblo6->setPosition(832, 525);
+    this->addChild(carrotsblo6, 6);
+    auto scalemove6 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo6->runAction(scalemove6);
+    carrotsblo6->setVisible(false);
+    //5
+    auto carrotsblo5 = Sprite::create("carrotsblo5.png");
+    carrotsblo5->setPosition(832, 525);
+    this->addChild(carrotsblo5, 5);
+    auto scalemove5 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo5->runAction(scalemove5);
+    carrotsblo5->setVisible(false);
+    //4
+    auto carrotsblo4 = Sprite::create("carrotsblo4.png");
+    carrotsblo4->setPosition(832, 525);
+    this->addChild(carrotsblo4, 4);
+    auto scalemove4 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo4->runAction(scalemove4);
+    carrotsblo4->setVisible(false);
+    //3
+    auto carrotsblo3 = Sprite::create("carrotsblo3.png");
+    carrotsblo3->setPosition(832, 525);
+    this->addChild(carrotsblo3, 3);
+    auto scalemove3 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo3->runAction(scalemove3);
+    carrotsblo3->setVisible(false);
+    //2
+    auto carrotsblo2 = Sprite::create("carrotsblo2.png");
+    carrotsblo2->setPosition(832, 525);
+    this->addChild(carrotsblo2, 2);
+    auto scalemove2 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo2->runAction(scalemove2);
+    carrotsblo2->setVisible(false);
+    //1
+    auto carrotsblo1 = Sprite::create("carrotsblo1.png");
+    carrotsblo1->setPosition(832, 525);
+    this->addChild(carrotsblo1, 1);
+    auto scalemove1 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo1->runAction(scalemove1);
+    carrotsblo1->setVisible(false);
+    
+    //初始化怪物
+    auto monster1_1 = Monster::create();
+    this->addChild(monster1_1, 5);
+    auto monster2_1 = Monster::create();
+    this->addChild(monster2_1, 5);
+    auto monster3_1 = Monster::create();
+    this->addChild(monster3_1, 5);
+    auto monster4_1 = Monster::create();
+    this->addChild(monster4_1, 5);
+    auto monster5_1 = Monster::create();
+    this->addChild(monster5_1, 5);
+    auto monster6_1 = Monster::create();
+    this->addChild(monster6_1, 5);
+    monster1_1->initMonster(this, 1);
+    // 创建一个延时动作
+    auto delay1 = DelayTime::create(1.0f);
+    auto delay2 = DelayTime::create(1.0f);
+    auto delay3 = DelayTime::create(1.0f);
+    auto delay4 = DelayTime::create(1.0f);
+    auto delay5 = DelayTime::create(1.0f);
+    // 创建一个回调动作
+    auto callback1 = CallFunc::create([=]() {
+        monster2_1->initMonster(this, 2);
+        });
+    auto callback2 = CallFunc::create([=]() {
+        monster3_1->initMonster(this, 3);
+        });
+    auto callback3 = CallFunc::create([=]() {
+        monster4_1->initMonster(this, 4);
+        });
+    auto callback4 = CallFunc::create([=]() {
+        monster5_1->initMonster(this, 5);
+        });
+    auto callback5 = CallFunc::create([=]() {
+        monster6_1->initMonster(this, 6);
+        });
+    // 创建一个序列动作
+    auto sequence = Sequence::create(delay1, callback1, delay2, callback2, delay3, callback3, delay4, callback4, delay5, callback5, nullptr);
+    // 运行序列动作
+    this->runAction(sequence);
     //可放防御塔的点
     Vec2 towerPosition[47] = {
         Vec2(202 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
@@ -377,19 +503,7 @@ bool MyScene::init()
     }
 
 
-    std::pair<float, float>p1(130 * scaleX, 435 * scaleY + dsh / 2.0f);
-    std::pair<float, float>p2(275 * scaleX, 435 * scaleY + dsh / 2.0f);
-    std::pair<float, float>p3(275 * scaleX, 147 * scaleY + dsh / 2.0f);
-    std::pair<float, float>p4(695 * scaleX, 147 * scaleY + dsh / 2.0f);
-    std::pair<float, float>p5(695 * scaleX, 435 * scaleY + dsh / 2.0f);
-    std::pair<float, float>p6(832 * scaleX, 435 * scaleY + dsh / 2.0f);
-    //拐点
-    InflectionPoint.push_back(p1);
-    InflectionPoint.push_back(p2);
-    InflectionPoint.push_back(p3);
-    InflectionPoint.push_back(p4);
-    InflectionPoint.push_back(p5);
-    InflectionPoint.push_back(p6);
+    
     //一个怪物
 
     nhSprite_2->setPosition(Vec2(0, 0));
