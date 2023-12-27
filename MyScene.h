@@ -1,9 +1,8 @@
 #include "cocos2d.h"
-#include"Map.h"
+
 #include<utility>
 #include<vector>
 #include"Tower.h"
-
 using namespace cocos2d;
 class MyScene : public Scene
 {
