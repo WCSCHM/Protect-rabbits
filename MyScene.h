@@ -1,13 +1,17 @@
 #include "cocos2d.h"
-
+#include"Map.h"
 #include<utility>
 #include<vector>
 #include"Tower.h"
+#include"Monster.h"
+#include<memory>
+
 using namespace cocos2d;
 class MyScene : public Scene
 {
 public:
     struct BLANK {
+        int No;//在vector中的序号
         Sprite* blank; //空点图标
         Vec2 position; //空点位置
         int direction; //炮塔方向
@@ -15,12 +19,14 @@ public:
         BLANK* ptr; //指向该节点的指针
         Tower* tower; //防御塔
         bool isAttacking = false;
+       // std::unique_ptr<Monster>target;
     };
     // 添加成员变量
     bool isAdded = false;
-    std::vector< std::pair<float, float> >InflectionPoint;
+    std::vector<Vec2>InflectionPoint;
     std::vector< Vec2 >BarrierPoint;
     std::vector<BLANK> blanks;
+    std::vector<float>distance;
     
     int selectedBlankIndex; // 记录选中的 blank 索引
     Sprite* pause_0;
@@ -36,6 +42,8 @@ public:
     Sprite* adv_menu_home;
     Sprite* btn_blue_l_2;
     Sprite* adv_menu_weibo;
+
+    Sprite* shitSprite;
     Sprite* bottleSprite;
     Sprite* selectSprite;
     Sprite* upgradeSprite;
@@ -48,14 +56,13 @@ public:
     float scaleY;
     float dsh_blank;
 
-    static cocos2d::Scene* createScene();
+    static MyScene* createScene();
     virtual bool init();
     Vec2 nhSprite_2_position;
     Sprite* nhSprite_2;
     CREATE_FUNC(MyScene);
     int row = 8;
     int col = 14;
-    int countdownValue;
     struct square {
         int status;
         std::pair<float, float>CenterPoint;
@@ -65,10 +72,11 @@ public:
         Vec2 pos;
         Sprite* type;
         bool isDestroyed = false;
+        float barrierBlood = 10;
     };
     barrier Barrier[12];
 
-    std::vector<Sprite*>spriteOnStage;
+    std::vector<Monster*>spriteOnStage;
 
 
     void Brain();
@@ -91,6 +99,7 @@ public:
     void MyScene::onTouchBeganForBlank(Vec2 location);
     Sprite* MyScene::showUpgradeSprite(Vec2 position, Tower* tower);
     Sprite* MyScene::showRemoveSprite(Vec2 position, Tower* tower);
+    Sprite* MyScene::showShitSprite(const Vec2& position);
 };
 
 #pragma once
