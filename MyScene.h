@@ -55,6 +55,7 @@ public:
     CREATE_FUNC(MyScene);
     int row = 8;
     int col = 14;
+    int countdownValue;
     struct square {
         int status;
         std::pair<float, float>CenterPoint;

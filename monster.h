@@ -8,10 +8,11 @@ public:
 	std::vector<std::pair<float, float> >destination;
 	Sprite* monster;
 	bool isDead = false;
+	bool isEnd = false;
 	virtual bool init();
 	void initMonster(MyScene* background,int type);
 	//void update(float dt);
-	static cocos2d::Layer* CreateMonster();
+	Monster* CreateMonster();
 	void MoveforMonster1(float dt);
 	void MoveforMonster2(float dt);
 	void MoveforMonster3(float dt);

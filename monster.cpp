@@ -4,7 +4,7 @@
 #include"Carrots.h"
 #include<vector>
 USING_NS_CC;
-Layer* Monster::CreateMonster()
+Monster* Monster::CreateMonster()
 {
     return Monster::create();
 }
@@ -26,7 +26,6 @@ bool Monster::init()
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
     return true;
 }
-
 void Monster::initMonster(MyScene* background, int type)
 {
     destination.assign(background->InflectionPoint.begin(), background->InflectionPoint.end());
@@ -64,8 +63,18 @@ void Monster::initMonster(MyScene* background, int type)
             auto monstermove3 = MoveTo::create(4.5, Vec2(destination[3].first, destination[3].second));
             auto monstermove4 = MoveTo::create(3.0, Vec2(destination[4].first, destination[4].second));
             auto monstermove5 = MoveTo::create(1.5, Vec2(destination[5].first, destination[5].second));
-            auto fadeout = FadeOut::create(0.5f);
-            auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+            auto changeEnd = CallFunc::create([=]() {
+                this->isEnd = true;
+                monster->setVisible(false);
+                auto Cloud = Sprite::create("effect2.png");
+                this->addChild(Cloud, 1);
+                Cloud->setPosition(monster->getPosition());
+                auto scalemove = ScaleBy::create(0.1,2.0f);
+                auto fadeout = FadeOut::create(1.0f);
+                auto seq1 = Sequence::create(scalemove,fadeout,nullptr);
+                Cloud->runAction(seq1);
+                });
+            auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeEnd,nullptr);
             monster->runAction(seq);
     }
     break;
@@ -95,8 +104,18 @@ void Monster::initMonster(MyScene* background, int type)
         auto monstermove3 = MoveTo::create(4.5, Vec2(destination[3].first, destination[3].second));
         auto monstermove4 = MoveTo::create(3.0, Vec2(destination[4].first, destination[4].second));
         auto monstermove5 = MoveTo::create(1.5, Vec2(destination[5].first, destination[5].second));
-        auto fadeout = FadeOut::create(0.5f);
-        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+        auto changeEnd = CallFunc::create([=]() {
+            this->isEnd = true;
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+            });
+        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeEnd, nullptr);
         monster->runAction(seq);
     }
     break;
@@ -126,8 +145,18 @@ void Monster::initMonster(MyScene* background, int type)
         auto monstermove3 = MoveTo::create(4.5, Vec2(destination[3].first, destination[3].second));
         auto monstermove4 = MoveTo::create(3.0, Vec2(destination[4].first, destination[4].second));
         auto monstermove5 = MoveTo::create(1.5, Vec2(destination[5].first, destination[5].second));
-        auto fadeout = FadeOut::create(0.5f);
-        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+        auto changeEnd = CallFunc::create([=]() {
+            this->isEnd = true;
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+            });
+        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeEnd, nullptr);
         monster->runAction(seq);
     }
     break;
@@ -157,8 +186,18 @@ void Monster::initMonster(MyScene* background, int type)
         auto monstermove3 = MoveTo::create(4.5, Vec2(destination[3].first, destination[3].second));
         auto monstermove4 = MoveTo::create(3.0, Vec2(destination[4].first, destination[4].second));
         auto monstermove5 = MoveTo::create(1.5, Vec2(destination[5].first, destination[5].second));
-        auto fadeout = FadeOut::create(0.5f);
-        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+        auto changeEnd = CallFunc::create([=]() {
+            this->isEnd = true;
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+            });
+        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeEnd, nullptr);
         monster->runAction(seq);
     }
     break;
@@ -189,7 +228,18 @@ void Monster::initMonster(MyScene* background, int type)
         auto monstermove4 = MoveTo::create(3.0, Vec2(destination[4].first, destination[4].second));
         auto monstermove5 = MoveTo::create(1.5, Vec2(destination[5].first, destination[5].second));
         auto fadeout = FadeOut::create(0.5f);
-        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+        auto changeEnd = CallFunc::create([=]() {
+            this->isEnd = true;
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+            });
+        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeEnd, nullptr);
         monster->runAction(seq);
     }
     break;
@@ -220,7 +270,18 @@ void Monster::initMonster(MyScene* background, int type)
         auto monstermove4 = MoveTo::create(3.0, Vec2(destination[4].first, destination[4].second));
         auto monstermove5 = MoveTo::create(1.5, Vec2(destination[5].first, destination[5].second));
         auto fadeout = FadeOut::create(0.5f);
-        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+        auto changeEnd = CallFunc::create([=]() {
+            this->isEnd = true;
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+            });
+        auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeEnd, nullptr);
         monster->runAction(seq);
     }
     break;
@@ -253,7 +314,10 @@ void Monster::MoveforMonster1(float dt)
     auto monstermove4 = MoveBy::create(3.3, Vec2(0, 264));
     auto monstermove5 = MoveBy::create(1.8, Vec2(144, 0));
     auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5,fadeout,nullptr);
+    auto changeDeath = CallFunc::create([=]() {
+        this->isDead = true;
+        });
+    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeDeath, fadeout,nullptr);
     // 运行动画
     monster1->runAction(seq);
     monster1->runAction(RepeatForever::create(animate));
@@ -284,7 +348,10 @@ void Monster::MoveforMonster2(float dt)
     auto monstermove4 = MoveBy::create(1.65, Vec2(0, 264));
     auto monstermove5 = MoveBy::create(0.9, Vec2(144, 0));
     auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+    auto changeDeath = CallFunc::create([=]() {
+        this->isDead = true; 
+        });
+    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeDeath, fadeout,nullptr);
     // 运行动画
     monster2->runAction(seq);
     monster2->runAction(RepeatForever::create(animate));
@@ -315,7 +382,10 @@ void Monster::MoveforMonster3(float dt)
     auto monstermove4 = MoveBy::create(3.3, Vec2(0, 264));
     auto monstermove5 = MoveBy::create(1.8, Vec2(144, 0));
     auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+    auto changeDeath = CallFunc::create([=]() {
+        this->isDead = true;
+        });
+    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeDeath, fadeout,nullptr);
     // 运行动画
     monster3->runAction(seq);
     monster3->runAction(RepeatForever::create(animate));
@@ -346,7 +416,10 @@ void Monster::MoveforMonster4(float dt)
     auto monstermove4 = MoveBy::create(1.65, Vec2(0, 264));
     auto monstermove5 = MoveBy::create(0.9, Vec2(144, 0));
     auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+    auto changeDeath = CallFunc::create([=]() {
+        this->isDead = true;
+        });
+    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeDeath, fadeout, nullptr);
     // 运行动画
     monster4->runAction(seq);
     monster4->runAction(RepeatForever::create(animate));
@@ -377,8 +450,10 @@ void Monster::MoveforMonster5(float dt)
     auto monstermove4 = MoveBy::create(3.3, Vec2(0, 264));
     auto monstermove5 = MoveBy::create(1.8, Vec2(144, 0));
     auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
-    // 运行动画
+    auto changeDeath = CallFunc::create([=]() {
+        this->isDead = true;
+        });
+    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeDeath, fadeout, nullptr);
     monster5->runAction(seq);
     monster5->runAction(RepeatForever::create(animate));
 }
@@ -408,8 +483,10 @@ void Monster::MoveforMonster6(float dt)
     auto monstermove4 = MoveBy::create(1.65, Vec2(0, 264));
     auto monstermove5 = MoveBy::create(0.9, Vec2(144, 0));
     auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
-    // 运行动画
+    auto changeDeath = CallFunc::create([=]() {
+        this->isDead = true;
+        });
+    auto seq = Sequence::create(scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, changeDeath, fadeout, nullptr);
     monster6->runAction(seq);
     monster6->runAction(RepeatForever::create(animate));
 }
@@ -426,18 +503,15 @@ std::vector<Vec2> Monster::getMonstersPositions()
 int Monster::checkMonstersReachedEnd(const Vec2& endPoint, float threshold)
 {
     int count = 0;
-    for (auto monster : monsters)
+    if (monster->getOpacity() != 0)
     {
-        if (monster->getOpacity() != 0)
+        cocos2d::Vec2 monsterPosition = monster->getPosition();
+        // 计算怪物位置和终点之间的距离
+        float distance = monsterPosition.distance(endPoint);
+        // 如果距离小于阈值，认为怪物到达了终点
+        if (distance < threshold)
         {
-            cocos2d::Vec2 monsterPosition = monster->getPosition();
-            // 计算怪物位置和终点之间的距离
-            float distance = monsterPosition.distance(endPoint);
-            // 如果距离小于阈值，认为怪物到达了终点
-            if (distance < threshold)
-            {
-                count++;
-            }
+            count=1;
         }
     }
     return count;

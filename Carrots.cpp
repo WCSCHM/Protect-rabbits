@@ -7,10 +7,6 @@ Layer* Carrots::CreateCarrots()
 {
     return Carrots::create();
 }
-enum ActionTag 
-{
-    ACTION_ANIMATE_TAG1 = 100,
-};
 // Print useful error message instead of segfaulting when files are not there.
 static void problemLoading(const char* filename)
 {
@@ -27,7 +23,6 @@ bool Carrots::init()
     //获取界面大小及原点
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
-    MoveforCarrots(0.0);
     return true;
 }
 void Carrots::MoveforCarrots(float dt)
@@ -36,7 +31,7 @@ void Carrots::MoveforCarrots(float dt)
     SpriteFrameCache::getInstance()->addSpriteFramesWithFile("carrots.plist");
     Vector<SpriteFrame*> animFrames;
     char str[30];
-    for (int i = 9; i <= 11; i++)
+    for (int i = 21; i <= 23; i++)
     {
         sprintf(str, "hlb1_%d.png", i);
         SpriteFrame* frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(str);
@@ -44,17 +39,57 @@ void Carrots::MoveforCarrots(float dt)
     }
     //设置动画
     auto animation = Animation::createWithSpriteFrames(animFrames, 1.0f / 2);
-    auto sprite = Sprite::createWithSpriteFrame(animFrames.front());
-    sprite->setPosition(830, 520);
-    this->addChild(sprite);
+    animateSprite1 = Sprite::createWithSpriteFrame(animFrames.front());
+    animateSprite1->setPosition(832, 490);
+    this->addChild(animateSprite1);
     auto animate = Animate::create(animation);
-    animate->setTag(ACTION_ANIMATE_TAG1); // 设置动作标签
-    sprite->runAction(RepeatForever::create(animate));
+    animateSprite1->runAction(RepeatForever::create(animate));
 }
-/*void Carrots::stopAnimation()
+void Carrots::MoveforCarrots1(float dt)
 {
-    if (animateSprite)
+    //加载图集
+    SpriteFrameCache::getInstance()->addSpriteFramesWithFile("carrots.plist");
+    Vector<SpriteFrame*> animFrames;
+    char str[30];
+    for (int i = 7; i <=9; i++)
     {
-        animateSprite->stopAllActions();
+        sprintf(str, "hlb1_%d.png", i);
+        SpriteFrame* frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(str);
+        animFrames.pushBack(frame);
     }
-}*/
+    //设置动画
+    auto animation = Animation::createWithSpriteFrames(animFrames, 1.0f / 2);
+    animateSprite1 = Sprite::createWithSpriteFrame(animFrames.front());
+    animateSprite1->setPosition(822, 480);
+    this->addChild(animateSprite1);
+    auto animate = Animate::create(animation);
+    animateSprite1->runAction(RepeatForever::create(animate));
+}
+void Carrots::MoveforCarrots2(float dt)
+{
+    //加载图集
+    SpriteFrameCache::getInstance()->addSpriteFramesWithFile("carrots.plist");
+    Vector<SpriteFrame*> animFrames;
+    char str[30];
+    for (int i = 3; i <= 6; i++)
+    {
+        sprintf(str, "hlb1_%d.png", i);
+        SpriteFrame* frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(str);
+        animFrames.pushBack(frame);
+    }
+    //设置动画
+    auto animation = Animation::createWithSpriteFrames(animFrames, 1.0f / 2);
+    animateSprite1 = Sprite::createWithSpriteFrame(animFrames.front());
+    animateSprite1->setPosition(830, 490);
+    this->addChild(animateSprite1);
+    auto animate = Animate::create(animation);
+    animateSprite1->runAction(RepeatForever::create(animate));
+}
+void Carrots::stopAnimation1()
+{
+    if (animateSprite1)
+    {
+        animateSprite1->stopAllActions();
+        animateSprite1->removeFromParentAndCleanup(true);
+    }
+}
