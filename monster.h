@@ -5,23 +5,20 @@ class Monster :public cocos2d::Layer
 {
 public:
 	std::vector<cocos2d::Sprite*> monsters;
-	std::vector<std::pair<float, float> >destination;
 	Sprite* monster;
 	bool isDead = false;
 	bool isEnd = false;
+	int bloodTemplate[7] = { 0,1,2,3,4,5,6 };
+	int blood[7] = { 0,1,2,3,4,5,6 };
+	int type;
+	Scene* BG;
+	std::vector<Vec2>destination;
+	float velocity[7] = { 0,50,50,100,100,100,100 };
+	void initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>distance, Scene* background, int spriteType);
 	virtual bool init();
-	void initMonster(MyScene* background,int type);
-	//void update(float dt);
+	void update(float dt);
 	Monster* CreateMonster();
-	void MoveforMonster1(float dt);
-	void MoveforMonster2(float dt);
-	void MoveforMonster3(float dt);
-	void MoveforMonster4(float dt);
-	void MoveforMonster5(float dt);
-	void MoveforMonster6(float dt);
 	int checkMonstersReachedEnd(const cocos2d::Vec2& endPoint, float threshold);
 	CREATE_FUNC(Monster);
 	std::vector<cocos2d::Vec2>getMonstersPositions();
 };
-//Monster* newMonster=CreateMonster();
-//newMonster->initMonster();

@@ -1,15 +1,16 @@
 #include "MyScene.h"
-#include"Map.h"
 #include"Tower.h";
 #include"Bullet.h"
-#include"Monster.h"
 #include<utility>
 #include<vector>
 #include<math.h>
-#include <algorithm>
+#include"monster.h"
+#include"Carrots.h"
+#include"bloodbar.h"
 using namespace std;
 USING_NS_CC;
-MyScene* MyScene::createScene()
+int Money = 0;
+Scene* MyScene::createScene()
 {
     return MyScene::create();
 }
@@ -31,10 +32,489 @@ bool MyScene::init()
     selectSprite->setVisible(false);
     this->addChild(selectSprite, 2);
 
+    /* auto listener = EventListenerTouchOneByOne::create();
+     listener->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBlank, this);
+     this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);*/
+    
+    if (!isAdded) {
+        auto mouseListener = EventListenerMouse::create();
+        mouseListener->onMouseDown = [this](Event* event) {
+            EventMouse* e = (EventMouse*)event;
+            if (e->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
+                Vec2 location = e->getLocationInView();
+                location.y = 640 - location.y;
+                location = Director::getInstance()->convertToGL(location); // 这里处理鼠标点击事件，location 是点击位置
+                this->onTouchBeganForBlank(location);
+
+            } };
+        this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(mouseListener, this);
+        isAdded = true;
+    }
+    // 在你的初始化函数中设置初始值
+    isPause0Visible = true;
+
+    // 初始化 pause_0
+    pause_0 = Sprite::create("pause_0.png");
+    pause_0->setPosition(Vec2(800 * scaleX, 605 * scaleY));
+    this->addChild(pause_0, 3);
+
+    // 初始化 pause_1
+    pause_1 = Sprite::create("pause_1.png");
+    pause_1->setPosition(Vec2(800 * scaleX, 605 * scaleY));
+    pause_1->setVisible(false);
+    this->addChild(pause_1, 3);
+
+    
+
+     //载入地图背景
+    auto BG = Sprite::create("BG1.png");
+    BG->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+    this->addChild(BG, 0);
+
+    auto Path1 = Sprite::create("Path1.png");
+    Path1->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
+    this->addChild(Path1, 1);
+    
+
+    //在地图起点处放置标志物
+    auto fflag = Sprite::create("start01.png");
+    fflag->setPosition(Vec2(135 * scaleX, 525 * scaleY));
+    this->addChild(fflag, 2);
+
     //在地图拐点处放怪物
     nhSprite_2 = Sprite::create("L22.png");
     float dsh = nhSprite_2->getTextureRect().size.height;
 
+    // 转换硬编码坐标为相对坐标
+    Vec2 point1 = Vec2(130 * scaleX, 435 * scaleY + dsh / 2.0f);
+    Vec2 point2 = Vec2(275 * scaleX, 435 * scaleY + dsh / 2.0f);
+    Vec2 point3 = Vec2(275 * scaleX, 147 * scaleY + dsh / 2.0f);
+    Vec2 point4 = Vec2(695 * scaleX, 147 * scaleY + dsh / 2.0f);
+    Vec2 point5 = Vec2(695 * scaleX, 435 * scaleY + dsh / 2.0f);
+    Vec2 point6 = Vec2(832 * scaleX, 435 * scaleY + dsh / 2.0f);
+    //背景上面那一长条
+    auto top_bg = Sprite::create("top_bg.png");
+    top_bg->setPosition(Vec2(480 * scaleX, 610 * scaleY));
+    this->addChild(top_bg, 2);
+
+    //暂停键
+  /*  auto pause_0 = Sprite::create("pause_0.png");
+    pause_0->setPosition(Vec2(800 * scaleX, 605 * scaleY));
+    this->addChild(pause_0, 2);*/
+    //进行游戏开场的倒计时
+    countdownValue = 3;
+    auto countdownlabel = Label::createWithTTF(std::to_string(countdownValue), "fonts/Marker Felt.ttf", 92);
+    countdownlabel->setPosition(480,320);
+    countdownlabel->setTextColor(Color4B(255, 0, 0, 155)); // 红色
+    this->addChild(countdownlabel, 5);
+    this->schedule([=](float dt)
+    {
+        countdownValue--;
+        if (countdownValue == 0)
+        {
+            countdownlabel->setVisible(false);
+        }
+        countdownlabel->setString(std::to_string(countdownValue));
+     }, 1.0f, "update_countdownlabel");
+    //速度
+    auto speed_0 = Sprite::create("speed_0.png");
+    speed_0->setPosition(Vec2(700 * scaleX, 603 * scaleY));
+    this->addChild(speed_0, 2);
+    //第几波怪物的显示
+    auto waves_bg = Sprite::create("waves_bg.png");
+    waves_bg->setPosition(Vec2(480 * scaleX, 603 * scaleY));
+    this->addChild(waves_bg, 2);
+    auto blank = Sprite::create("select_01.png");
+    dsh_blank = blank->getTextureRect().size.height;
+    //初始化拐点
+    Vec2 p1(130 * scaleX, 435 * scaleY + dsh / 2.0f);
+    Vec2 p2(275 * scaleX, 435 * scaleY + dsh / 2.0f);
+    Vec2 p3(275 * scaleX, 147 * scaleY + dsh / 2.0f);
+    Vec2 p4(695 * scaleX, 147 * scaleY + dsh / 2.0f);
+    Vec2 p5(695 * scaleX, 435 * scaleY + dsh / 2.0f);
+    Vec2 p6(832 * scaleX, 435 * scaleY + dsh / 2.0f);
+    //拐点
+    InflectionPoint.push_back(p1);
+    InflectionPoint.push_back(p2);
+    InflectionPoint.push_back(p3);
+    InflectionPoint.push_back(p4);
+    InflectionPoint.push_back(p5);
+    InflectionPoint.push_back(p6);
+    for (unsigned int i = 0; i <= 4; i++) {
+        float d = InflectionPoint[i].distance(InflectionPoint[i + 1]);
+        distance.push_back(d);
+    }
+    // 创建一个Label来显示金钱的值
+    auto label = Label::createWithTTF(std::to_string(Money), "fonts/Marker Felt.ttf", 34);
+    label->setPosition(145, 615);
+    label->setTextColor(Color4B::WHITE);
+    this->addChild(label, 5);
+    // 定期更新Label
+    this->schedule([label](float dt) {
+        label->setString(std::to_string(Money));
+        }, 0.1f, "update_label");
+    //放置萝卜
+    // //萝卜的移动
+    auto carrotsLayer = Carrots::create();
+    carrotsLayer->MoveforCarrots(0.0);
+    this->addChild(carrotsLayer, 1);
+    //萝卜血量
+    //10
+    auto carrotsblo10 = Sprite::create("carrotsblo10.png");
+    carrotsblo10->setPosition(832,525);
+    this->addChild(carrotsblo10, 10);
+    auto scalemove10 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo10->runAction(scalemove10);
+    //9
+    auto carrotsblo9 = Sprite::create("carrotsblo9.png");
+    carrotsblo9->setPosition(832, 525);
+    this->addChild(carrotsblo9, 9);
+    auto scalemove9 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo9->runAction(scalemove9);
+    carrotsblo9->setVisible(false);
+    //8
+    auto carrotsblo8 = Sprite::create("carrotsblo8.png");
+    carrotsblo8->setPosition(832, 525);
+    this->addChild(carrotsblo8, 8);
+    auto scalemove8 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo8->runAction(scalemove8);
+    carrotsblo8->setVisible(false);
+    //7
+    auto carrotsblo7 = Sprite::create("carrotsblo7.png");
+    carrotsblo7->setPosition(832, 525);
+    this->addChild(carrotsblo7, 7);
+    auto scalemove7 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo7->runAction(scalemove7);
+    carrotsblo7->setVisible(false);
+    //6
+    auto carrotsblo6 = Sprite::create("carrotsblo6.png");
+    carrotsblo6->setPosition(832, 525);
+    this->addChild(carrotsblo6, 6);
+    auto scalemove6 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo6->runAction(scalemove6);
+    carrotsblo6->setVisible(false);
+    //5
+    auto carrotsblo5 = Sprite::create("carrotsblo5.png");
+    carrotsblo5->setPosition(832, 525);
+    this->addChild(carrotsblo5, 5);
+    auto scalemove5 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo5->runAction(scalemove5);
+    carrotsblo5->setVisible(false);
+    //4
+    auto carrotsblo4 = Sprite::create("carrotsblo4.png");
+    carrotsblo4->setPosition(832, 525);
+    this->addChild(carrotsblo4, 4);
+    auto scalemove4 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo4->runAction(scalemove4);
+    carrotsblo4->setVisible(false);
+    //3
+    auto carrotsblo3 = Sprite::create("carrotsblo3.png");
+    carrotsblo3->setPosition(832, 525);
+    this->addChild(carrotsblo3, 3);
+    auto scalemove3 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo3->runAction(scalemove3);
+    carrotsblo3->setVisible(false);
+    //2
+    auto carrotsblo2 = Sprite::create("carrotsblo2.png");
+    carrotsblo2->setPosition(832, 525);
+    this->addChild(carrotsblo2, 2);
+    auto scalemove2 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo2->runAction(scalemove2);
+    carrotsblo2->setVisible(false);
+    //1
+    auto carrotsblo1 = Sprite::create("carrotsblo1.png");
+    carrotsblo1->setPosition(832, 525);
+    this->addChild(carrotsblo1, 1);
+    auto scalemove1 = ScaleBy::create(0.1, 0.3f);
+    carrotsblo1->runAction(scalemove1);
+    carrotsblo1->setVisible(false);
+    //初始化怪物
+    auto monster1_1 = Monster::create();
+    this->addChild(monster1_1, 5);
+    auto monster2_1 = Monster::create();
+    this->addChild(monster2_1, 5);
+    auto monster3_1 = Monster::create();
+    this->addChild(monster3_1, 5);
+    auto monster4_1 = Monster::create();
+    this->addChild(monster4_1, 5);
+    auto monster5_1 = Monster::create();
+    this->addChild(monster5_1, 5);
+    auto monster6_1 = Monster::create();
+    this->addChild(monster6_1, 5);
+    auto monster1_2 = Monster::create();
+    this->addChild(monster1_2, 5);
+    auto monster2_2 = Monster::create();
+    this->addChild(monster2_2, 5);
+    auto monster3_2 = Monster::create();
+    this->addChild(monster3_2, 5);
+    auto monster4_2 = Monster::create();
+    this->addChild(monster4_2, 5);
+    //初始化血条
+    auto bloodbar1_1 = Bloodbar::create();
+    this->addChild(bloodbar1_1, 5);
+    auto bloodbar2_1 = Bloodbar::create();
+    this->addChild(bloodbar2_1, 5);
+    auto bloodbar3_1 = Bloodbar::create();
+    this->addChild(bloodbar3_1, 5);
+    auto bloodbar4_1 = Bloodbar::create();
+    this->addChild(bloodbar4_1, 5);
+    auto bloodbar5_1 = Bloodbar::create();
+    this->addChild(bloodbar5_1, 5);
+    auto bloodbar6_1 = Bloodbar::create();
+    this->addChild(bloodbar6_1, 5);
+    auto bloodbar1_2 = Bloodbar::create();
+    this->addChild(bloodbar1_2, 5);
+    auto bloodbar2_2 = Bloodbar::create();
+    this->addChild(bloodbar2_2, 5);
+    auto bloodbar3_2 = Bloodbar::create();
+    this->addChild(bloodbar3_2, 5);
+    auto bloodbar4_2 = Bloodbar::create();
+    this->addChild(bloodbar4_2, 5);
+    // 创建一个延时动作
+    auto delay0 = DelayTime::create(3.0f);
+    auto delay1 = DelayTime::create(1.0f);
+    auto delay2 = DelayTime::create(1.0f);
+    auto delay3 = DelayTime::create(1.0f);
+    auto delay4 = DelayTime::create(1.0f);
+    auto delay5 = DelayTime::create(1.0f);
+    auto delay6 = DelayTime::create(1.0f);
+    auto delay7 = DelayTime::create(1.0f);
+    auto delay8 = DelayTime::create(1.0f);
+    auto delay9 = DelayTime::create(1.0f);
+    // 创建一个回调动作
+    auto callback0 = CallFunc::create([=]() {
+        monster1_1->initMonster(InflectionPoint, distance, this, 1);
+        bloodbar1_1->initBloodbar(InflectionPoint, distance, this, 1, 5);
+        });
+    auto callback1 = CallFunc::create([=]() {
+        monster2_1->initMonster(InflectionPoint, distance, this, 2);
+        bloodbar2_1->initBloodbar(InflectionPoint, distance, this,2, 2);
+        });
+    auto callback2 = CallFunc::create([=]() {
+        monster3_1->initMonster(InflectionPoint, distance, this, 3);
+        bloodbar3_1->initBloodbar(InflectionPoint, distance, this,3,4);
+        });
+    auto callback3 = CallFunc::create([=]() {
+        monster4_1->initMonster(InflectionPoint, distance, this, 4);
+        bloodbar4_1->initBloodbar(InflectionPoint, distance, this,4,1);
+        });
+    auto callback4 = CallFunc::create([=]() {
+        monster5_1->initMonster(InflectionPoint, distance, this, 5);
+        bloodbar5_1->initBloodbar(InflectionPoint, distance, this,5,5);
+        });
+    auto callback5 = CallFunc::create([=]() {
+        monster6_1->initMonster(InflectionPoint, distance, this, 6);
+        bloodbar6_1->initBloodbar(InflectionPoint, distance, this, 6, 3);
+        });
+    auto callback6 = CallFunc::create([=]() {
+        monster1_2->initMonster(InflectionPoint, distance, this, 1);
+        bloodbar1_2->initBloodbar(InflectionPoint, distance, this, 1, 5);
+        });
+    auto callback7 = CallFunc::create([=]() {
+        monster2_2->initMonster(InflectionPoint, distance, this, 2);
+        bloodbar2_2->initBloodbar(InflectionPoint, distance, this,2,3);
+        });
+    auto callback8 = CallFunc::create([=]() {
+        monster3_2->initMonster(InflectionPoint, distance, this, 3);
+        bloodbar3_2->initBloodbar(InflectionPoint, distance, this, 3, 5);
+        });
+    auto callback9 = CallFunc::create([=]() {
+        monster4_2->initMonster(InflectionPoint, distance, this, 4);
+        bloodbar4_2->initBloodbar(InflectionPoint, distance, this,4,2);
+        });
+    this->schedule([=](float dt)
+    {
+        int monstersReachedEnd=0;
+        monstersReachedEnd += (monster1_1->isEnd+ monster2_1->isEnd + monster3_1->isEnd + monster4_1->isEnd + monster5_1->isEnd
+            + monster6_1->isEnd+ monster1_2->isEnd+ monster2_2->isEnd + monster3_2->isEnd + monster4_2->isEnd);
+        if (monstersReachedEnd > 0 && monstersReachedEnd < 4)
+        {
+            CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
+            // 调用 CarrotsLayer 中的方法来停止动画
+            carrotsLayer->stopAnimation1();
+            //开始第二段动画
+            carrotsLayer->MoveforCarrots1(0.0);
+        }
+        if (monstersReachedEnd >= 4)
+        {
+            CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
+            // 调用 CarrotsLayer 中的方法来停止动画
+            carrotsLayer->stopAnimation1();
+            //开始第二段动画
+            carrotsLayer->MoveforCarrots2(0.0);
+        }
+        if (monstersReachedEnd == 1)
+        {
+            carrotsblo10->setVisible(false);
+            carrotsblo9->setVisible(true);
+        }
+        if (monstersReachedEnd == 2)
+        {
+            carrotsblo9->setVisible(false);
+            carrotsblo8->setVisible(true);
+        }
+        if (monstersReachedEnd == 3)
+        {
+            carrotsblo8->setVisible(false);
+            carrotsblo7->setVisible(true);
+        }
+        if (monstersReachedEnd == 4)
+        {
+            carrotsblo7->setVisible(false);
+            carrotsblo6->setVisible(true);
+        }
+        if (monstersReachedEnd == 5)
+        {
+            carrotsblo6->setVisible(false);
+            carrotsblo5->setVisible(true);
+        }
+        if (monstersReachedEnd == 6)
+        {
+            carrotsblo5->setVisible(false);
+            carrotsblo4->setVisible(true);
+        }
+        if (monstersReachedEnd == 7)
+        {
+            carrotsblo4->setVisible(false);
+            carrotsblo3->setVisible(true);
+        }
+        if (monstersReachedEnd == 8)
+        {
+            carrotsblo3->setVisible(false);
+            carrotsblo2->setVisible(true);
+        }
+        if (monstersReachedEnd == 9)
+        {
+            carrotsblo2->setVisible(false);
+            carrotsblo1->setVisible(true);
+        }
+        if (monstersReachedEnd == 10)
+        {
+            carrotsblo1->setVisible(false);
+            auto labelend = Label::createWithTTF("GAME OVER", "fonts/Marker Felt.ttf", 120);
+            labelend->setPosition(480,320);
+            labelend->setTextColor(Color4B::BLACK);
+            this->addChild(labelend, 5);
+        }
+        }, 0.1f, "monsterCheckScheduler");
+    // 创建一个序列动作
+    auto sequence = Sequence::create(delay0,callback0,delay1, callback1, delay2, callback2, delay3, callback3, delay4, callback4, delay5, callback5,delay6,callback6, 
+        delay7, callback7, delay8, callback8, delay9, callback9, nullptr);
+    // 运行序列动作
+    this->runAction(sequence);
+    //可放防御塔的点
+    Vec2 towerPosition[47] = {
+        Vec2(202 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(202 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(135 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(135 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
+        Vec2(135 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
+        Vec2(202 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
+        Vec2(202 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
+        Vec2(271 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
+        Vec2(409 * scaleX, 208 * scaleY + dsh_blank / 2.0f),
+        Vec2(478 * scaleX, 208 * scaleY + dsh_blank / 2.0f),
+        Vec2(626 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(626 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(553 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(553 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(478 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(478 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(340 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
+        Vec2(409 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
+        Vec2(478 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
+        Vec2(762 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(762 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(831 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(831 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
+        Vec2(762 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
+        Vec2(831 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
+        Vec2(478 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
+        Vec2(626 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
+        Vec2(695 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
+        Vec2(762 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
+        Vec2(135 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(271 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(409 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(478 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(695 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(762 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(66 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(66 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
+        Vec2(66 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(66 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(66 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
+        Vec2(66 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
+        Vec2(900 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
+        Vec2(900 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
+        Vec2(900 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
+        Vec2(900 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
+        Vec2(900 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
+        Vec2(900 * scaleX, 142 * scaleY + dsh_blank / 2.0f)
+    };
+    int towerDirection[47] = {
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        -2,
+        -2,
+        -2,
+        -2,
+        -2,
+        -2,
+        -2,
+        -2,
+        -2,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -2,
+        -2,
+        1,
+        1,
+        1,
+        0,
+        -1,
+        -1,
+        0,
+        0,
+        1,
+        -2,
+        -1,
+        -1,
+        -2,
+        -2
+    };
+
+    for (int i = 0; i < 47; i++) {
+        BLANK* Node = new BLANK;
+        Node->blank = Sprite::create("select_01.png");
+        Node->blank->setPosition(towerPosition[i]);
+        Node->blank->setVisible(false);
+        Node->position = towerPosition[i];
+        Node->direction = towerDirection[i];
+        Node->ptr =Node;
+        this->addChild(Node->blank, 2);
+        blanks.push_back(*Node);
+    }
+
+    //在空白处放障碍物
     float dsh_s;
     float dsh_s2;
     float dsh_s3;
@@ -99,308 +579,7 @@ bool MyScene::init()
     }
 
 
-    Vec2 p1(130 * scaleX, 435 * scaleY + dsh / 2.0f);
-    Vec2 p2(275 * scaleX, 435 * scaleY + dsh / 2.0f);
-    Vec2 p3(275 * scaleX, 147 * scaleY + dsh / 2.0f);
-    Vec2 p4(695 * scaleX, 147 * scaleY + dsh / 2.0f);
-    Vec2 p5(695 * scaleX, 435 * scaleY + dsh / 2.0f);
-    Vec2 p6(832 * scaleX, 435 * scaleY + dsh / 2.0f);
-    //拐点
-    InflectionPoint.push_back(p1);
-    InflectionPoint.push_back(p2);
-    InflectionPoint.push_back(p3);
-    InflectionPoint.push_back(p4);
-    InflectionPoint.push_back(p5);
-    InflectionPoint.push_back(p6);
-
-    for (unsigned int i = 0; i <= 4; i++) {
-        float d = InflectionPoint[i].distance(InflectionPoint[i + 1]);
-        distance.push_back(d);
-    }
     
-    if (!isAdded) {
-        auto mouseListener = EventListenerMouse::create();
-        mouseListener->onMouseDown = [this](Event* event) {
-            EventMouse* e = (EventMouse*)event;
-            if (e->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
-                Vec2 location = e->getLocationInView();
-                location.y = 640 - location.y;
-                location = Director::getInstance()->convertToGL(location); // 这里处理鼠标点击事件，location 是点击位置
-                this->onTouchBeganForBlank(location);
-
-            } };
-        this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(mouseListener, this);
-        isAdded = true;
-    }
-    // 在你的初始化函数中设置初始值
-    isPause0Visible = true;
-
-    // 初始化 pause_0
-    pause_0 = Sprite::create("pause_0.png");
-    pause_0->setPosition(Vec2(800 * scaleX, 605 * scaleY));
-    this->addChild(pause_0, 3);
-
-    // 初始化 pause_1
-    pause_1 = Sprite::create("pause_1.png");
-    pause_1->setPosition(Vec2(800 * scaleX, 605 * scaleY));
-    pause_1->setVisible(false);
-    this->addChild(pause_1, 3);
-
-    /* auto listener_2 = EventListenerTouchOneByOne::create();
-     listener_2->setSwallowTouches(true);
-     listener_2->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForPause, this);
-     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_2, this);
-
-     // 初始化暂停界面
-     pause_info = Sprite::create("pause_info.png");
-     pause_info->setPosition(Vec2(480 * scaleX, 602 * scaleY));
-     pause_info->setVisible(false);
-     this->addChild(pause_info, 3);
-
-     //目录
-     menu = Sprite::create("menu.png");
-     menu->setPosition(Vec2(880 * scaleX, 605 * scaleY));
-     this->addChild(menu, 3);
-     auto listener_3 = EventListenerTouchOneByOne::create();
-     listener_3->setSwallowTouches(true);
-     listener_3->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForMenu, this);
-     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_3, this);
-     //按目录键之后的显示
-      adv_menu_bg = Sprite::create("adv_menu_bg.png");
-     adv_menu_bg->setPosition(Vec2(480 * scaleX, 340 * scaleY));
-     adv_menu_bg->setVisible(false);
-     this->addChild(adv_menu_bg, 3);
-     //按目录键之后的继续游戏键
-      btn_green_b = Sprite::create("btn_green_b.png");
-     btn_green_b->setPosition(Vec2(480 * scaleX, 422 * scaleY));
-     btn_green_b->setVisible(false);
-     this->addChild(btn_green_b, 4);
-      adv_menu_continue = Sprite::create("adv_menu_continue.png");
-     adv_menu_continue->setPosition(Vec2(480 * scaleX, 422 * scaleY));
-     adv_menu_continue->setVisible(false);
-     this->addChild(adv_menu_continue, 5);
-
-     auto listener_btn_green_b = EventListenerTouchOneByOne::create();
-     listener_btn_green_b->setSwallowTouches(true);
-     listener_btn_green_b->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnGreenB, this);
-     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_btn_green_b, btn_green_b);
-
-
-     //按目录键之后的重新开始键
-      btn_blue_b = Sprite::create("btn_blue_b.png");
-     btn_blue_b->setPosition(Vec2(480 * scaleX, 314 * scaleY));
-     btn_blue_b->setVisible(false);
-     this->addChild(btn_blue_b, 4);
-      adv_menu_restart = Sprite::create("adv_menu_restart.png");
-     adv_menu_restart->setPosition(Vec2(480 * scaleX, 314 * scaleY));
-     adv_menu_restart->setVisible(false);
-     this->addChild(adv_menu_restart, 5);
-
-     auto listener_restart = EventListenerTouchOneByOne::create();
-     listener_restart->setSwallowTouches(true);
-     listener_restart->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnBlueB, this);
-     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_restart, btn_blue_b);
-
-     //按目录键之后的回主菜单键
-      btn_blue_l = Sprite::create("btn_blue_l.png");
-     btn_blue_l->setPosition(Vec2(397 * scaleX, 204 * scaleY));
-     btn_blue_l->setVisible(false);
-     this->addChild(btn_blue_l, 4);
-      adv_menu_home = Sprite::create("adv_menu_home.png");
-     adv_menu_home->setPosition(Vec2(397 * scaleX, 204 * scaleY));
-     adv_menu_home->setVisible(false);
-     this->addChild(adv_menu_home, 5);
-
-     auto listener_home = EventListenerTouchOneByOne::create();
-     listener_home->setSwallowTouches(true);
-     listener_home->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnBlueL, this);
-     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_home, btn_blue_l);
-
-     //按目录键之后的转发键
-      btn_blue_l_2 = Sprite::create("btn_blue_l.png");
-     btn_blue_l_2->setPosition(Vec2(565 * scaleX, 204 * scaleY));
-     btn_blue_l_2->setVisible(false);
-     this->addChild(btn_blue_l_2, 4);
-      adv_menu_weibo = Sprite::create("adv_menu_weibo.png");
-     adv_menu_weibo->setPosition(Vec2(565 * scaleX, 204 * scaleY));
-     adv_menu_weibo->setVisible(false);
-     this->addChild(adv_menu_weibo, 5);
-
-     auto listener_weibo = EventListenerTouchOneByOne::create();
-     listener_weibo->setSwallowTouches(true);
-     listener_weibo->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnBlueL_2, this);
-     _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_weibo, btn_blue_l_2);*/
-
-     //载入地图背景
-    auto BG = Sprite::create("BG1.png");
-    BG->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-    this->addChild(BG, 0);
-
-    auto Path1 = Sprite::create("Path1.png");
-    Path1->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-    this->addChild(Path1, 1);
-    //  CCLOG("x=%f", visibleSize.width);
-      //在地图终点处放置一个萝卜
-    auto nhSprite = Sprite::create("whole_carrot_1.png");
-    nhSprite->setPosition(Vec2(832 * scaleX, 525 * scaleY));
-    this->addChild(nhSprite, 2);
-
-    //在地图起点处放置标志物
-    auto fflag = Sprite::create("start01.png");
-    fflag->setPosition(Vec2(135 * scaleX, 525 * scaleY));
-    this->addChild(fflag, 2);
-
-    
-
-    // 转换硬编码坐标为相对坐标
-    Vec2 point1 = Vec2(130 * scaleX, 435 * scaleY + dsh / 2.0f);
-    Vec2 point2 = Vec2(275 * scaleX, 435 * scaleY + dsh / 2.0f);
-    Vec2 point3 = Vec2(275 * scaleX, 147 * scaleY + dsh / 2.0f);
-    Vec2 point4 = Vec2(695 * scaleX, 147 * scaleY + dsh / 2.0f);
-    Vec2 point5 = Vec2(695 * scaleX, 435 * scaleY + dsh / 2.0f);
-    Vec2 point6 = Vec2(832 * scaleX, 435 * scaleY + dsh / 2.0f);
-    //背景上面那一长条
-    auto top_bg = Sprite::create("top_bg.png");
-    top_bg->setPosition(Vec2(480 * scaleX, 610 * scaleY));
-    this->addChild(top_bg, 2);
-
-    //暂停键
-  /*  auto pause_0 = Sprite::create("pause_0.png");
-    pause_0->setPosition(Vec2(800 * scaleX, 605 * scaleY));
-    this->addChild(pause_0, 2);*/
-
-
-    //速度
-    auto speed_0 = Sprite::create("speed_0.png");
-    speed_0->setPosition(Vec2(700 * scaleX, 603 * scaleY));
-    this->addChild(speed_0, 2);
-    //第几波怪物的显示
-    auto waves_bg = Sprite::create("waves_bg.png");
-    waves_bg->setPosition(Vec2(480 * scaleX, 603 * scaleY));
-    this->addChild(waves_bg, 2);
-
-    auto blank = Sprite::create("select_01.png");
-    dsh_blank = blank->getTextureRect().size.height;
-
-    //可放防御塔的点
-    Vec2 towerPosition[47] = {
-        Vec2(202 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(202 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(135 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(135 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
-        Vec2(135 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
-        Vec2(202 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
-        Vec2(202 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
-        Vec2(271 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
-        Vec2(409 * scaleX, 208 * scaleY + dsh_blank / 2.0f),
-        Vec2(478 * scaleX, 208 * scaleY + dsh_blank / 2.0f),
-        Vec2(626 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(626 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(553 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(553 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(478 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(478 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(340 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
-        Vec2(409 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
-        Vec2(478 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
-        Vec2(762 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(762 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(831 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(831 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
-        Vec2(762 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
-        Vec2(831 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
-        Vec2(478 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
-        Vec2(626 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
-        Vec2(695 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
-        Vec2(762 * scaleX, 73 * scaleY + dsh_blank / 2.0f),
-        Vec2(135 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(271 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(409 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(478 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(695 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(762 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(66 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(66 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
-        Vec2(66 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(66 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(66 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
-        Vec2(66 * scaleX, 142 * scaleY + dsh_blank / 2.0f),
-        Vec2(900 * scaleX, 488 * scaleY + dsh_blank / 2.0f),
-        Vec2(900 * scaleX, 419 * scaleY + dsh_blank / 2.0f),
-        Vec2(900 * scaleX, 350 * scaleY + dsh_blank / 2.0f),
-        Vec2(900 * scaleX, 280 * scaleY + dsh_blank / 2.0f),
-        Vec2(900 * scaleX, 211 * scaleY + dsh_blank / 2.0f),
-        Vec2(900 * scaleX, 142 * scaleY + dsh_blank / 2.0f)
-    };
-
-    int towerDirection[47] = {
-        -1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        -1,
-        -1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        -2,
-        -2,
-        -2,
-        -2,
-        -2,
-        -2,
-        -2,
-        -2,
-        -2,
-        -1,
-        -1,
-        -1,
-        -1,
-        1,
-        1,
-        -2,
-        -2,
-        1,
-        1,
-        1,
-        0,
-        -1,
-        -1,
-        0,
-        0,
-        1,
-        -2,
-        -1,
-        -1,
-        -2,
-        -2
-    };
-
-    for (int i = 0; i < 47; i++) {
-        BLANK* Node = new BLANK;
-        Node->blank = Sprite::create("select_01.png");
-        Node->blank->setPosition(towerPosition[i]);
-        Node->blank->setVisible(false);
-        Node->position = towerPosition[i];
-        Node->direction = towerDirection[i];
-        Node->ptr =Node;
-        Node->No = i;
-        this->addChild(Node->blank, 2);
-        blanks.push_back(*Node);
-    }
-
-    //在空白处放障碍物
-    
-
-    
-
     //一个怪物
 
     nhSprite_2->setPosition(Vec2(0, 0));
@@ -415,122 +594,53 @@ bool MyScene::init()
     this->addChild(nhSprite_2, 2);
 
 
-    
-
-
-
-	auto a = Monster::CreateMonster();
-	a->initMonster(InflectionPoint, distance, this, 1);
-
-    spriteOnStage.push_back(a);
-	this->addChild(a, 3);
- 
-
-    auto bb = CallFunc::create([this]() {
-        auto b = Monster::CreateMonster();
-        b->initMonster(InflectionPoint, distance, this, 2);
-        this->addChild(b, 3);
-        spriteOnStage.push_back(b);
-        
-        });
-
-    auto sequence = Sequence::create(DelayTime::create(8), bb, nullptr);
-
-    this->runAction(sequence);
-    Brain();
-    
     return true;
 
- 
+    /*1：130, 435
+      2：275,435
+      3：275,147
+      4：695,147
+      5：695,435
+      6：832, 435
+      */
 }
 
 void MyScene::Brain() {
-
-	this->schedule(CC_SCHEDULE_SELECTOR(MyScene::updateSprite), 0.1f); // 1.0f代表每秒更新一次
+    auto startUpdate = CallFunc::create([this]() {
+        // 使用schedule函数来每秒调用update方法
+        this->schedule(CC_SCHEDULE_SELECTOR(MyScene::update), 0.1f); // 1.0f代表每秒更新一次
+        });
 
 }
 
 void MyScene::updateSprite(float dt) {
     for (unsigned int i = 0; i < spriteOnStage.size(); i++) {
-        //只检查活着的精灵
-        if (!spriteOnStage[i]->isChecked) {
+        if (spriteOnStage[i]) {
 
-            //精灵已经阵亡
-            if (spriteOnStage[i]->isDead && !spriteOnStage[i]->isChecked) {
-                //让防御塔停止攻击这只精灵
-                for (unsigned int k = 0; k < spriteOnStage[i]->isAttackingMe.size(); k++) {
-                    blanks[spriteOnStage[i]->isAttackingMe[k]].tower->setIncoming(Vec2(INT_MAX, INT_MAX));
-
-                    //把定时器取消
-                    std::string schedulerName = "update_position_scheduler_" + std::to_string(i) + std::to_string(spriteOnStage[i]->isAttackingMe[k]);
-                    this->unschedule(schedulerName);
-                    CCLOG("delete string is: %s", schedulerName.c_str());
-                    blanks[spriteOnStage[i]->isAttackingMe[k]].isAttacking = false;
-                }
-
-                //设置精灵状态，以后不在遍历这只精灵
-                spriteOnStage[i]->isChecked = true;
-            }
-
-            else {
-                for (unsigned int j = 0; j < blanks.size(); j++) {
-                    if (blanks[j].isOccupied) {//搜索放置防御塔的地方
-                        Vec2 current = spriteOnStage[i]->monster->getPosition();
-                        float x = current.x - blanks[j].position.x;
-                        float y = current.y - blanks[j].position.y;
-                        float distance = sqrt(x * x + y * y);
-
-                        //精灵处于防御塔的攻击范围且防御塔不在攻击,并且精灵i与防御塔j之间的的关系还没有建立
-                        std::string schedulerName = "update_position_scheduler_" + std::to_string(i) + std::to_string(j);
-                        bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(schedulerName, this);
-                        
-                        if (distance <= blanks[j].tower->attackRange && (!blanks[j].isAttacking)&&(!isScheduled)) {
-                            //CCLOG("%d", spriteOnStage[i]->type);
-                            std::string schedulerName = "update_position_scheduler_" + std::to_string(i) + std::to_string(j);
-                            this->schedule([i, j, this](float dt) {
-                                Vec2 currentPosition = spriteOnStage[i]->monster->getPosition();
-                                blanks[j].tower->setIncoming(currentPosition);
-                                }, 0.3f, schedulerName);
-                            CCLOG("The string is: %s", schedulerName.c_str());
-                            blanks[j].isAttacking = true;
-                            blanks[j].tower->spriteNum = i;//把正在攻击的精灵序号存起来,表示blanks[j]的防御塔正在攻击精灵i
-                            blanks[j].tower->enemyType = spriteOnStage[i]->type;
-                            spriteOnStage[i]->isAttackingMe.push_back(blanks[j].No);//把这个防御塔加入vector
-                        }
-
-                        //发现精灵超出了防御塔范围
-                        else if (distance >= blanks[j].tower->attackRange&&isScheduled) {
-                            //查看精灵i与防御塔j之间是否存在定时器
-                            if (isScheduled) {//如果有
-                                blanks[j].tower->setIncoming(Vec2(INT_MAX, INT_MAX));
-                                this->unschedule(schedulerName);
-                                blanks[j].isAttacking = false;
-                                auto it = std::find(spriteOnStage[i]->isAttackingMe.begin(), spriteOnStage[i]->isAttackingMe.end(), blanks[j].tower->No);
-                                if (it != spriteOnStage[i]->isAttackingMe.end()) {
-                                    spriteOnStage[i]->isAttackingMe.erase(it);
-                                }
-                            }
-
-                            //把这个塔从攻击列表里删除
-                            
-                           
-                        }
-
-
-
-                    }
-                }
-
-            }
         }
+        else
+			for (unsigned int j = 0; j < blanks.size(); j++) {
+				if (blanks[j].isOccupied) {//搜索放置防御塔的地方
+					Vec2 current = spriteOnStage[i]->getPosition();
+					float x = current.x - blanks[j].position.x;
+					float y = current.y - blanks[j].position.y;
+					float distance = sqrt(x * x + y * y);
+					if (distance <= blanks[j].tower->attackRange && !blanks[j].isAttacking) {//精灵处于防御塔的攻击范围且
+						//防御塔不在攻击
+						std::string schedulerName = "update_position_scheduler_" + std::to_string(i);
+						this->schedule([i, j, this](float dt) {
+							Vec2 currentPosition = spriteOnStage[i]->getPosition();
+							blanks[j].tower->setIncoming(currentPosition);
+							}, 0.3f, schedulerName);
+						blanks[j].isAttacking = true;
+					}
+				}
+			}
     }
 }
 
 
-
-
 void MyScene::onTouchBeganForBlank(Vec2 location) {
-    static int i = 0;
     static bool selected = false;//记录方框之前是否有被选中过
 
     static bool selectedChoice = false;//记录升级和删除两个按钮是否有被选中过
@@ -540,31 +650,12 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
 
     if (selected) {
         Rect bottleRect = bottleSprite->getBoundingBox();
-        Rect shitRect = shitSprite->getBoundingBox();
         if (bottleRect.containsPoint(touchLocation)) {//点击瓶子位置，放置防御塔
             blanks[selectedBlankIndex].isOccupied = true;
             bottleSprite->setVisible(false);
-            shitSprite->setVisible(false);
             selectSprite->setVisible(false);
-            Tower* newTower = new Tower;
-            newTower = Tower::createTower();
-            newTower->placeTower(newPos.position,newPos.direction,this,1, selectedBlankIndex);
-            //newTower->enemies.assign(spriteOnStage.begin(), spriteOnStage.end());
-            newTower->enemies = &spriteOnStage;
-            blanks[selectedBlankIndex].tower = newTower;
-            selected = false;
-            this->addChild(newTower, 3);
-            return;
-        }
-        else if (shitRect.containsPoint(touchLocation)) {
-            blanks[selectedBlankIndex].isOccupied = true;
-            bottleSprite->setVisible(false);
-            shitSprite->setVisible(false);
-            selectSprite->setVisible(false);
-            Tower* newTower = new Tower;
-            newTower = Tower::createTower();
-            newTower->placeTower(newPos.position, newPos.direction, this, 2, selectedBlankIndex);
-            newTower->enemies = &spriteOnStage;
+            Tower* newTower = Tower:: createTower();
+            newTower->placeTower(newPos.position,newPos.direction,this);
             blanks[selectedBlankIndex].tower = newTower;
             selected = false;
             this->addChild(newTower, 3);
@@ -572,7 +663,6 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
         }
         else {//点击其它位置，选中区域取消
             bottleSprite->setVisible(false);
-            shitSprite->setVisible(false);
             selectSprite->setVisible(false);
             selected = false;
             return;
@@ -593,35 +683,7 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
             return;
         }
         else if (removeRect.containsPoint(touchLocation)) {//移除防御塔
-
-            
-            auto Stop=CallFunc::create([this]() {
-                if (blanks[selectedBlankIndex].isAttacking) {//如果这个防御塔正在攻击精灵
-                    //把定时器删掉
-                    //如果
-                    std::string schedulerName = "update_position_scheduler_" + std::to_string(blanks[selectedBlankIndex].No) + std::to_string(blanks[selectedBlankIndex].tower->No);
-                    this->unschedule(schedulerName);
-
-                    for (int n = 0; n < 12; n++) {
-                        std::string barrierScheduler = "barrier" + std::to_string(blanks[selectedBlankIndex].No) + std::to_string(n);
-                        bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(barrierScheduler, this);
-                        if (isScheduled)
-                            this->unschedule(barrierScheduler);
-                    }
-
-
-
-                }
-                blanks[selectedBlankIndex].tower->stopAllActions();
-                blanks[selectedBlankIndex].tower->setVisible(false);
-                });
-            auto delay_to_remove = DelayTime::create(1.0f);
-            auto removeTower = CallFunc::create([this]() {
-                blanks[selectedBlankIndex].tower->removeFromParent();
-                });
-            auto sequence = Sequence::create(Stop,delay_to_remove, removeTower, nullptr);
-            this->runAction(sequence);
-
+            blanks[selectedBlankIndex].tower->removeFromParent();
             upgradeSprite->setVisible(false);
             removeSprite->setVisible(false);
             selectedChoice = false;
@@ -664,7 +726,6 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
 
             // 显示 Bottle01.png 在 (x, y + 70) 位置
             bottleSprite = showBottleSprite(Vec2(blankCenter.x, blankCenter.y + 70));
-            shitSprite= showShitSprite(Vec2(blankCenter.x+70, blankCenter.y + 70));
 
             selected = true;
             return;
@@ -675,44 +736,13 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
                 selectedChoice = true;
                 selectedBlankIndex = i;
                 Vec2 pedestalCenter(pedestalRect.getMidX(), pedestalRect.getMidY());
-                showUpgradeSprite(Vec2(pedestalCenter.x, pedestalCenter.y + 70), blanks[i].tower);
-                showRemoveSprite(Vec2(pedestalCenter.x, pedestalCenter.y - 70), blanks[i].tower);
+                upgradeSprite = showUpgradeSprite(Vec2(pedestalCenter.x, pedestalCenter.y + 70), blanks[i].tower);
+                removeSprite= showRemoveSprite(Vec2(pedestalCenter.x, pedestalCenter.y - 70), blanks[i].tower);
                 return;
             }
         }
 
     }
-
-    for (int k = 0; k < 12; k++) {
-        Rect barrierRect=Barrier[k].type->getBoundingBox();
-
-        if (barrierRect.containsPoint(touchLocation)) {
-            for (int t = 0; t < 47; t++) {
-                if (blanks[t].isOccupied&&Barrier[k].pos.distance(blanks[t].tower->pos)<= blanks[t].tower->attackRange) {
-                    if (blanks[t].isAttacking) {
-                        std::string schedulerName = "update_position_scheduler_" + std::to_string(blanks[t].tower->spriteNum) + std::to_string(blanks[t].No);
-                        bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(schedulerName, this);
-                        if (isScheduled)
-                            this->unschedule(schedulerName);
-                        for (int n = 0; n < 12; n++) {
-                            std::string barrierScheduler = "barrier" + std::to_string(t) + std::to_string(n);
-                            bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(barrierScheduler, this);
-                            if (isScheduled)
-                                this->unschedule(barrierScheduler);
-                        }
-                    }
-                    this->schedule([this,t,k](float dt) {
-                        Vec2 currentPosition = Barrier[k].pos;
-                        blanks[t].tower->setIncoming(currentPosition);
-                        }, 0.3f, "barrier"+ std::to_string(t)+ std::to_string(k));
-                    blanks[t].isAttacking = true;
-                }
-            }
-        }
-    }
-
-
-
 
 
     // 如果点击位置不在任何 blank 区域上，隐藏 Bottle01.png 和 select_01.png
@@ -756,59 +786,37 @@ Sprite* MyScene::showBottleSprite(const Vec2& position)
     // 创建并显示新的 Bottle01.png 精灵
     bottleSprite = Sprite::create("Bottle01.png");
     bottleSprite->setPosition(position);
-    this->addChild(bottleSprite, 4);
+    this->addChild(bottleSprite, 2);
     return bottleSprite;
 }
-
-Sprite* MyScene::showShitSprite(const Vec2& position)
-{
-    // 移除之前的 Bottle01.png
-    if (shitSprite != nullptr && shitSprite->getParent() != nullptr)
-    {
-        shitSprite->removeFromParent();
-    }
-
-    // 创建并显示新的 Bottle01.png 精灵
-    shitSprite = Sprite::create("Shit.png");
-    shitSprite->setPosition(position);
-    this->addChild(shitSprite, 4);
-    return shitSprite;
-}
-
-
-
-
-
-
-
 
 Sprite* MyScene::showUpgradeSprite(Vec2 position, Tower* tower) {
     if (upgradeSprite != nullptr && upgradeSprite->getParent() != nullptr)
     {
         upgradeSprite->removeFromParent();
     }
-
-	if (tower->level == 1) {
-		CCLOG("fffff");
-		upgradeSprite = Sprite::create("1upgrade1.png");
-		upgradeSprite->setPosition(position);
-		this->addChild(upgradeSprite, 4);
-		return upgradeSprite;
-	}
-	else if (tower->level == 2) {
-		upgradeSprite = Sprite::create("1upgrade2.png");
-		upgradeSprite->setPosition(position);
-		this->addChild(upgradeSprite, 4);
-		return upgradeSprite;
-	}
-	else if (tower->level == 3) {
-		upgradeSprite = Sprite::create("upgrade3.png");
-		upgradeSprite->setPosition(position);
-		this->addChild(upgradeSprite, 4);
-		return upgradeSprite;
-	}
-
-    
+    switch (tower->type) {
+        case 1: {
+            if (tower->level == 1) {
+                upgradeSprite= Sprite::create("1upgrade1.png");
+                upgradeSprite->setPosition(position);
+                this->addChild(upgradeSprite, 2);
+                return upgradeSprite;
+            }
+            else if (tower->level == 2) {
+                upgradeSprite = Sprite::create("1upgrade2.png");
+                upgradeSprite->setPosition(position);
+                this->addChild(upgradeSprite, 2);
+                return upgradeSprite;
+            }
+            else if (tower->level == 3) {
+                upgradeSprite = Sprite::create("upgrade3.png");
+                upgradeSprite->setPosition(position);
+                this->addChild(upgradeSprite, 2);
+                return upgradeSprite;
+            }
+        }
+    }
 }
 
 Sprite* MyScene::showRemoveSprite(Vec2 position, Tower* tower) {
@@ -816,25 +824,28 @@ Sprite* MyScene::showRemoveSprite(Vec2 position, Tower* tower) {
     {
         removeSprite->removeFromParent();
     }
-
-	if (tower->level == 1) {
-		removeSprite = Sprite::create("1remove1.png");
-		removeSprite->setPosition(position);
-		this->addChild(removeSprite, 3);
-		return removeSprite;
-	}
-	else if (tower->level == 2) {
-		removeSprite = Sprite::create("1remove2.png");
-		removeSprite->setPosition(position);
-		this->addChild(removeSprite, 3);
-		return removeSprite;
-	}
-	else if (tower->level == 3) {
-		removeSprite = Sprite::create("1remove3.png");
-		removeSprite->setPosition(position);
-		this->addChild(removeSprite, 3);
-		return removeSprite;
-	}
+    switch (tower->type) {
+        case 1: {
+            if (tower->level == 1) {
+                removeSprite = Sprite::create("1remove1.png");
+                removeSprite->setPosition(position);
+                this->addChild(removeSprite, 2);
+                return removeSprite;
+            }
+            else if (tower->level == 2) {
+                removeSprite = Sprite::create("1remove2.png");
+                removeSprite->setPosition(position);
+                this->addChild(removeSprite, 2);
+                return removeSprite;
+            }
+            else if (tower->level == 3) {
+                removeSprite = Sprite::create("1remove3.png");
+                removeSprite->setPosition(position);
+                this->addChild(removeSprite, 2);
+                return removeSprite;
+            }
+        }
+    }
 }
 
 bool MyScene::onTouchBeganForPause(cocos2d::Touch* touch, cocos2d::Event* event) {
