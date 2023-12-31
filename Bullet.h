@@ -13,12 +13,14 @@ public:
 	bool is_active = false;
 	bool hitTarget = false;
 	Vec2 startPos;
-	double velosity = 400;
+	float velocity[4] = { 0,600,600,400 };
 
-	void loadBullet(int level,Scene* background);
+	void loadBullet(int level,Scene* background,int type);
 	void aimEnemy(double enemyDirection, Vec2 pos);
 	void shoot(Vec2 enemyPos);
-
+	void dart(double enemyDirection, Vec2 pos);
+	void shitAttack(Vec2 enemyPos);
+	void starAttack(Vec2 enemyPos);
 	float hurt[4] = { 0,0.25,0.34,0.5 };
 	
 	static Bullet* createBullet();

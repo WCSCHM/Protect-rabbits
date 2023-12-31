@@ -4,10 +4,15 @@
 #include<vector>
 #include<math.h>
 #include"Bullet.h"
+#include "SimpleAudioEngine.h"
 using namespace cocos2d;
 #define pi 3.14159
 
 void Tower::setIncoming(Vec2 CurrentPosition) {
+	if (CurrentPosition == Vec2(INT_MAX, INT_MAX)) {
+		Incoming = false;
+		startFire = false;
+	}
 	double x = CurrentPosition.x - pos.x;
 	double y = CurrentPosition.y - pos.y;
 	double distance = sqrt(x * x + y * y);
@@ -39,22 +44,59 @@ bool Tower::init() {
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("Bottle.plist");
 
 
-	pedestal = Sprite::create("Bottle_3.png");
-	newTower = Sprite::create("Bottle11.png");
+	
 
 	return true;
 }
 
-void Tower::placeTower(Vec2 Pos,int direction,Scene* background) {
+void Tower::placeTower(Vec2 Pos,int direction,Scene* background,int towerType,int j) {
 	BG = background;
 	pos = Pos;
 	dir = direction;
+	type = towerType;
+	No = j;
 	
-	
+	switch (type) {
+		case 1: {
+			pedestal = Sprite::create("Bottle_3.png");
+			newTower = Sprite::create("Bottle11.png");
+			break;
+		}
+		case 2: {
+			pedestal = Sprite::create("ShitP.png");
+			newTower = Sprite::create("Shit1.png");
+			break;
+		}
+		case 3: {
+			pedestal = Sprite::create("StarP.png");
+			newTower = Sprite::create("Star1.png");
+			break;
+		}
+	}
 	auto place = CallFunc::create([this]() {
-		newTower->setPosition(pos);
-		pedestal->setPosition(pos);
-		pedestal->setScale(0.80);
+		CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("TowerBulid.mp3");
+		switch (type) {
+			case 1: {
+				newTower->setRotation(dir * 90.0);
+				newTower->setPosition(pos);
+				pedestal->setPosition(pos);
+				pedestal->setScale(0.80);
+				break;
+			}
+			case 2: {
+				newTower->setScale(0.9);
+				pedestal->setPosition(pos);
+				newTower->setPosition(Vec2(pos.x, pos.y+10));
+				break;
+			}
+			case 3: {
+				newTower->setPosition(Vec2(pos.x + 4, pos.y + 2));
+				pedestal->setPosition(pos);
+				attackRange = 300;
+				break;
+			}  
+		}
+		
 		});
 	auto startUpdate = CallFunc::create([this]() {
 		// 使用schedule函数来每秒调用update方法
@@ -66,9 +108,7 @@ void Tower::placeTower(Vec2 Pos,int direction,Scene* background) {
 		this->bornEffect();
 		});
 
-	auto rotateAction = RotateTo::create(0.4 * fabs(direction), direction * 90.0);
-
-	auto sequence = Sequence::create(effect,place,rotateAction, startUpdate, nullptr);
+	auto sequence = Sequence::create(effect,place,startUpdate,nullptr);
 	
 	// 应用这个序列到newTower精灵
 	newTower->runAction(sequence);
@@ -78,21 +118,29 @@ void Tower::placeTower(Vec2 Pos,int direction,Scene* background) {
 
 
 void Tower::update(float dt) {
-	if (startFire) {
-		// 当全局布尔变量变为true时，执行所需的操作并停止更新
-		//弹匣装填
-		this->prepareFire();
-		//开火
-		this->Fire();
-		//this->unscheduleUpdate(); // 停止更新
-	}
-	else if (Upgrade) {
+	if (Upgrade) {
 		upgrade();
-		
+
 	}
+	else if (startFire) {
+		//开火
+		switch (type) {
+			case 1: {
+				this->bottleFire();
+				break;
+			}
+			case 2: {
+				this->shitFire();
+				break;
+			}
+			case 3: {
+				this->starFire();
+			}
+		}
+	}
+
 	else {
 		newTower->setVisible(true);
-		newTower->setPosition(pos);
 	}
 }
 
@@ -119,29 +167,35 @@ double Tower::CalculateArccos() {
 }
 
 
-void Tower::Fire() {
+void Tower::bottleFire() {
 	
-
 	//获取旋转角度
 	double enemyAngle = CalculateArccos();
 	enemyDirection=enemyAngle;
 	auto rotateAction = RotateTo::create(0.1, -enemyAngle);
+	Bullet* bullet = Bullet::createBullet();
+	bullet->loadBullet(this->level, BG, type);
 	
-
 	auto startFire = CallFunc::create([this]() {
-		//子弹上膛
-		auto bullet = selectBullet();
+		Bullet* bullet = Bullet::createBullet();
+		bullet->loadBullet(this->level, BG, type);
 		if (bullet != nullptr) {
-			
 			if (!bullet->getParent()) {
 				BG->addChild(bullet, 4);
 			}
-
-			BG->schedule([=](float dt) {
+			this->schedule([=](float dt) {
 				if (bullet->hitTarget) {
 					bullet->hitTarget = false;
-					enemyHurt = hurt[level];
+					if (isAttackingBarrier) {
+						(*enemyBarrier)[barrierNum].barrierBlood -= hurt[level];
+						(*barrierBloodbar)[barrierNum]->bloodbar->setPercentage((*enemyBarrier)[barrierNum].barrierBlood / 20 * 100.0f);
+					}
+					else {
+						(*enemies)[spriteNum]->blood[enemyType] -= hurt[level];
+						(*enemyBloodbar)[spriteNum]->bloodbar->setPercentage((*enemies)[spriteNum]->blood[enemyType] / (*enemies)[spriteNum]->bloodTemplate[enemyType] * 100.0);
+					}
 					this->unschedule("check_hit");
+					
 				}
 				else
 					enemyHurt = 0;
@@ -156,9 +210,30 @@ void Tower::Fire() {
 	// 定义一个回调函数来播放动画
 	auto playAnimations = CallFunc::create([this, enemyAngle]() {
 		
-		auto newTower11 = Sprite::createWithSpriteFrameName("Bottle11.png");
-		auto newTower12 = Sprite::createWithSpriteFrameName("Bottle12.png");
-		auto newTower13 = Sprite::createWithSpriteFrameName("Bottle13.png");
+		Sprite* newTower11;
+		Sprite* newTower12;
+		Sprite* newTower13;
+		switch (this->level) {
+			case 1:{
+				newTower11 = Sprite::createWithSpriteFrameName("Bottle11.png");
+				newTower12 = Sprite::createWithSpriteFrameName("Bottle12.png");
+				newTower13 = Sprite::createWithSpriteFrameName("Bottle13.png");
+				break;
+			}
+			case 2: {
+				newTower11 = Sprite::createWithSpriteFrameName("Bottle21.png");
+				newTower12 = Sprite::createWithSpriteFrameName("Bottle22.png");
+				newTower13 = Sprite::createWithSpriteFrameName("Bottle23.png");
+				break;
+			}
+			case 3: {
+				newTower11 = Sprite::createWithSpriteFrameName("Bottle31.png");
+				newTower12 = Sprite::createWithSpriteFrameName("Bottle32.png");
+				newTower13 = Sprite::createWithSpriteFrameName("Bottle33.png");
+				break;
+			}
+		}
+		
 
 		newTower11->setRotation(-enemyAngle);
 		newTower12->setRotation(-enemyAngle);
@@ -174,7 +249,7 @@ void Tower::Fire() {
 		animation->addSpriteFrame(frame1);
 		animation->addSpriteFrame(frame2);
 
-		animation->setDelayPerUnit(0.2f); // 每帧间隔0.5秒
+		animation->setDelayPerUnit(0.1f); // 每帧间隔0.5秒
 		animation->setLoops(1); // 动画循环播放
 
 		// 创建动画动作
@@ -196,101 +271,14 @@ void Tower::Fire() {
 
 	auto recover= CallFunc::create([this]() {
 		newTower->setVisible(true);
+		
 		});
+
 
 	auto sequenceAction = Sequence::create(rotateAction,disappear, playAnimations,startFire,recover,nullptr);
 	newTower->setVisible(true);
 	newTower->runAction(sequenceAction);
 	Incoming = false;
-}
-
-void Tower::prepareFire() {
-	switch (this->level) {
-		case 1: {
-			if (!MagazineLoaded[this->level]) {
-				Magazine1.resize(24);
-				for (int i = 0; i < 24; i++) {
-					Bullet* newBullet = Bullet::createBullet();
-					newBullet->loadBullet(this->level,BG);
-					Magazine1[i] = newBullet;
-				}
-				MagazineLoaded[this->level] = true;
-				break;
-			}
-		}
-		case 2: {
-			if (!MagazineLoaded[this->level]) {
-				Magazine1.resize(24);
-				for (int i = 0; i < 24; i++) {
-					Bullet* newBullet = Bullet::createBullet();
-					newBullet->loadBullet(this->level, BG);
-					Magazine2[i] = newBullet;
-				}
-				MagazineLoaded[this->level] = true;
-				break;
-			}
-		}
-		case 3: {
-			if (!MagazineLoaded[this->level]) {
-				Magazine1.resize(24);
-				for (int i = 0; i < 24; i++) {
-					Bullet* newBullet = Bullet::createBullet();
-					newBullet->loadBullet(this->level, BG);
-					Magazine3[i] = newBullet;
-				}
-				MagazineLoaded[this->level] = true;
-				break;
-			}
-		}
-	}
-}
-
-Bullet* Tower::selectBullet() {
-	switch (this->level) {
-		case 1: {
-			unsigned int i = 0;
-			for (; i < Magazine1.size(); i++) {
-				if (!Magazine1[i]->is_active)
-					return Magazine1[i];
-			}
-			if (i == Magazine1.size()) {
-				Bullet* newBullet = Bullet::createBullet();
-				newBullet->loadBullet(this->level, BG);
-				Magazine1.push_back(newBullet);
-				return newBullet;
-			}
-			break;
-		}
-		case 2: {
-			unsigned int i = 0;
-			for (; i < Magazine2.size(); i++) {
-				if (!Magazine2[i]->is_active)
-					return Magazine2[i];
-			}
-			if (i == Magazine2.size()) {
-				Bullet* newBullet = Bullet::createBullet();
-				newBullet->loadBullet(this->level, BG);
-				Magazine2.push_back(newBullet);
-				return newBullet;
-			}
-			break;
-		}
-		case 3: {
-			unsigned int i = 0;
-			for (; i < Magazine3.size(); i++) {
-				if (!Magazine3[i]->is_active)
-					return Magazine3[i];
-			}
-			if (i == Magazine3.size()) {
-				Bullet* newBullet = Bullet::createBullet();
-				newBullet->loadBullet(this->level, BG);
-				Magazine3.push_back(newBullet);
-				return newBullet;
-			}
-			break;
-		}
-	}
-	return NULL;
 }
 
 void Tower::bornEffect() {
@@ -355,25 +343,236 @@ void Tower::upgrade() {
 			bornEffect();
 		});
 	auto update = CallFunc::create([this]() {
-		switch (level) {
-			case 1: {
-				newTower->setTexture("Bottle21.png");
-				break;
+		switch (type) {
+			case 1:{
+				if(level==1)
+					newTower->setTexture("Bottle21.png");
+				else if(level==2)
+					newTower->setTexture("Bottle31.png");
+				newTower->setPosition(pos);
+				if (enemyDirection != 0)
+					newTower->setRotation(-enemyDirection);
+				else
+					newTower->setRotation(dir * 90);
+				break;		
 			}
 			case 2: {
-				newTower->setTexture("Bottle31.png");
+				if (level == 1)
+					newTower->setTexture("Shit2.png");
+				else if (level == 2)
+					newTower->setTexture("Shit3.png");
+				newTower->setPosition(Vec2(pos.x,pos.y+10));
+				break;
+			}
+			case 3: {
+				if (level == 1)
+					newTower->setTexture("Star2.png");
+				else if (level == 2)
+					newTower->setTexture("Star3.png");
+				newTower->setPosition(Vec2(pos.x + 4, pos.y + 2));
 				break;
 			}
 		}
-		if (enemyDirection != 0)
-			newTower->setRotation(-enemyDirection);
-		else
-			newTower->setRotation(dir*90);
-		newTower->setPosition(pos);
 		level++;
 		newTower->setVisible(true);
 		Upgrade = false;
 		});
 	auto sequence = Sequence::create(update,effect, nullptr);
 	newTower->runAction(sequence);
+}
+
+void Tower::shitFire() {
+	double enemyAngle = CalculateArccos();
+	enemyDirection = enemyAngle;
+	auto rotateAction = RotateTo::create(0.1, -enemyAngle);
+
+
+	auto startFire = CallFunc::create([this]() {
+		Bullet* bullet = Bullet::createBullet();
+		bullet->loadBullet(this->level, BG, type);
+		if (bullet != nullptr) {
+
+			if (!bullet->getParent()) {
+				BG->addChild(bullet, 4);
+			}
+
+			this->schedule([=](float dt) {
+				if (bullet->hitTarget) {
+					bullet->hitTarget = false;
+					if (isAttackingBarrier) {
+						(*enemyBarrier)[barrierNum].barrierBlood -= hurt[level];
+						(*barrierBloodbar)[barrierNum]->bloodbar->setPercentage((*enemyBarrier)[barrierNum].barrierBlood / 20 * 100.0f);
+					}
+					else {
+						(*enemies)[spriteNum]->blood[enemyType] -= hurt[level];
+						(*enemyBloodbar)[spriteNum]->bloodbar->setPercentage((*enemies)[spriteNum]->blood[enemyType] / (*enemies)[spriteNum]->bloodTemplate[enemyType] * 100.0);
+						(*enemies)[spriteNum]->slowDown = true;
+						(*enemyBloodbar)[spriteNum]->slowDown = true;
+					}
+					this->unschedule("check_hit");
+				}
+				else
+					enemyHurt = 0;
+				}, 0.1, "check_hit");
+
+			bullet->hitTarget = false;
+			bullet->aimEnemy(enemyDirection, pos);
+			bullet->shitAttack(enemyPos);
+		}
+		});
+
+	// 定义一个回调函数来播放动画
+	auto playAnimations = CallFunc::create([this, enemyAngle]() {
+		Sprite* newTower11;
+		Sprite* newTower12;
+		Sprite* newTower13;
+		switch (this->level) {
+			case 1: {
+				newTower11 = Sprite::create("Shit1.png");
+				newTower12 = Sprite::create("Shit11.png");
+				newTower13 = Sprite::create("Shit1.png");
+				break;
+			}
+			case 2: {
+				newTower11 = Sprite::create("Shit2.png");
+				newTower12 = Sprite::create("Shit21.png");
+				newTower13 = Sprite::create("Shit2.png");
+				break;
+			}
+			case 3: {
+				newTower11 = Sprite::create("Shit3.png");
+				newTower12 = Sprite::create("Shit31.png");
+				newTower13 = Sprite::create("Shit3.png");
+				break;
+			}
+		}
+		
+		auto animation = Animation::create();
+
+		auto frame0 = newTower11->getSpriteFrame();
+		auto frame1 = newTower12->getSpriteFrame();
+		auto frame2 = newTower13->getSpriteFrame();
+
+		animation->addSpriteFrame(frame0);
+		animation->addSpriteFrame(frame1);
+		animation->addSpriteFrame(frame2);
+
+		animation->setDelayPerUnit(0.1f); // 每帧间隔0.5秒
+		animation->setLoops(1); // 动画循环播放
+
+		// 创建动画动作
+		auto animate = Animate::create(animation);
+
+		auto animationEnd = CallFunc::create([newTower11, newTower12, newTower13]() {
+			newTower11->removeFromParent();
+			});
+
+		auto animationSequence = Sequence::create(animate, animationEnd, nullptr);
+		newTower11->setPosition(Vec2(pos.x, pos.y + 10));
+		newTower11->runAction(animationSequence);
+		this->addChild(newTower11, 3);
+		});
+
+	auto disappear = CallFunc::create([this]() {
+		newTower->setVisible(false);
+		});
+
+	auto recover = CallFunc::create([this]() {
+
+		newTower->setVisible(true);
+		});
+
+
+
+	auto sequenceAction = Sequence::create(disappear, playAnimations, startFire, recover, nullptr);
+	newTower->setVisible(true);
+	newTower->runAction(sequenceAction);
+	Incoming = false;
+}
+
+void Tower::starFire() {
+	double enemyAngle = CalculateArccos();
+	enemyDirection = enemyAngle;
+
+	auto startFire = CallFunc::create([this]() {
+		Bullet* bullet = Bullet::createBullet();
+		bullet->loadBullet(this->level, BG, type);
+		if (bullet != nullptr) {
+
+			if (!bullet->getParent()) {
+				BG->addChild(bullet, 4);
+			}
+
+			this->schedule([=](float dt) {
+				if (bullet->hitTarget) {
+					bullet->hitTarget = false;
+					if (isAttackingBarrier) {
+						(*enemyBarrier)[barrierNum].barrierBlood -= hurt[level];
+						(*barrierBloodbar)[barrierNum]->bloodbar->setPercentage((*enemyBarrier)[barrierNum].barrierBlood / 20 * 100.0f);
+						for (int i = 0; i < (*enemyBarrier).size(); i++) {
+							Vec2 around = (*enemyBarrier)[i].pos;
+							if (around.distance(enemyPos) <= 200) {
+								if ((*enemyBarrier)[i].barrierBlood == 20)
+									(*barrierBloodbar)[i]->bloodbar->setVisible(true);
+								(*enemyBarrier)[i].barrierBlood -= hurt[level];
+								(*barrierBloodbar)[i]->bloodbar->setPercentage((*enemyBarrier)[i].barrierBlood /20 * 100.0);
+							}
+						}
+						for (int i = 0; i < (*enemies).size(); i++) {
+							Vec2 around = (*enemies)[i]->monster->getPosition();
+							if (around.distance(enemyPos) <= 200) {
+								(*enemies)[i]->blood[(*enemies)[i]->type] -= hurt[level];
+								(*enemyBloodbar)[i]->bloodbar->setPercentage((*enemies)[i]->blood[(*enemies)[i]->type] / (*enemies)[i]->bloodTemplate[(*enemies)[i]->type] * 100.0);
+							}
+						}
+					}
+					else {
+						(*enemies)[spriteNum]->blood[enemyType] -= hurt[level];
+						(*enemyBloodbar)[spriteNum]->bloodbar->setPercentage((*enemies)[spriteNum]->blood[enemyType] / (*enemies)[spriteNum]->bloodTemplate[enemyType] * 100.0);
+						for (int i = 0; i < (*enemies).size(); i++) {
+							Vec2 around = (*enemies)[i]->monster->getPosition();
+							if (around.distance(enemyPos) <= 200) {
+								(*enemies)[i]->blood[(*enemies)[i]->type] -= hurt[level];
+								(*enemyBloodbar)[i]->bloodbar->setPercentage((*enemies)[i]->blood[(*enemies)[i]->type] / (*enemies)[i]->bloodTemplate[(*enemies)[i]->type] * 100.0);
+							}
+						}
+						for (int i = 0; i < (*enemyBarrier).size(); i++) {
+							Vec2 around = (*enemyBarrier)[i].pos;
+							if (around.distance(enemyPos) <= 200) {
+								if ((*enemyBarrier)[i].barrierBlood == 20)
+									(*barrierBloodbar)[i]->bloodbar->setVisible(true);
+								(*enemyBarrier)[i].barrierBlood -= hurt[level];
+								(*barrierBloodbar)[i]->bloodbar->setPercentage((*enemyBarrier)[i].barrierBlood / 20 * 100.0);
+							}
+						}
+					}
+					this->unschedule("check_hit");
+				}
+				else
+					enemyHurt = 0;
+				}, 0.1, "check_hit");
+
+			bullet->hitTarget = false;
+			bullet->aimEnemy(enemyDirection, pos);
+			bullet->starAttack(enemyPos);
+		}
+		});
+
+	
+
+	auto disappear = CallFunc::create([this]() {
+		newTower->setVisible(false);
+		});
+
+	auto recover = CallFunc::create([this]() {
+
+		newTower->setVisible(true);
+		});
+
+
+
+	auto sequenceAction = Sequence::create(startFire, recover, nullptr);
+	newTower->setVisible(true);
+	newTower->runAction(sequenceAction);
+	Incoming = false;
 }
