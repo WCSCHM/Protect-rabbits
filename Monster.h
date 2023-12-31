@@ -9,10 +9,12 @@ class Monster :public cocos2d::Layer
 public:
 	bool isDead = false;
 	bool isChecked = false;
+	bool isEnd = false;
+	bool slowDown = false;
 
 	int type;
-	int bloodTemplate[7]= { 0,1,2,3,4,5,6 };
-	int blood[7] = { 0,1,2,3,4,5,6 };
+	float bloodTemplate[7]= { 0,1,2,3,4,5,6 };
+	float blood[7] = { 0,1,2,3,4,5,6 };
 	Scene* BG;
 	std::vector<cocos2d::Sprite*> monsters;
 	std::vector<Vec2>destination;

@@ -39,11 +39,7 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
     SpriteFrameCache::getInstance()->addSpriteFramesWithFile("monster6.plist");
 
     ScaleBy* scalemove1;
-    MoveTo* monstermove1;
-    MoveTo* monstermove2;
-    MoveTo* monstermove3;
-    MoveTo* monstermove4;
-    MoveTo* monstermove5;
+
 
     switch (type)
     {
@@ -68,12 +64,7 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
             monster->runAction(RepeatForever::create(animate));
             //怪物运动
             scalemove1 = ScaleBy::create(0.1, 0.5f);
-            monstermove1 = MoveTo::create(distance[0] / velocity[1], destination[1]);
-            monstermove2 = MoveTo::create(distance[1] / velocity[1], destination[2]);
-            monstermove3 = MoveTo::create(distance[2] / velocity[1], destination[3]);
-            monstermove4 = MoveTo::create(distance[3] / velocity[1], destination[4]);
-            monstermove5 = MoveTo::create(distance[4] / velocity[1], destination[5]);
-            auto fadeout = FadeOut::create(0.5f);
+            
         }
         break;
         case 2:
@@ -95,15 +86,7 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
             //运行动画
             auto animate = Animate::create(animation);
             monster->runAction(RepeatForever::create(animate));
-            //怪物运动
             scalemove1 = ScaleBy::create(0.1, 0.5f);
-            monstermove1 = MoveTo::create(distance[0] / velocity[2], destination[1]);
-            monstermove2 = MoveTo::create(distance[1] / velocity[2], destination[2]);
-            monstermove3 = MoveTo::create(distance[2] / velocity[2], destination[3]);
-            monstermove4 = MoveTo::create(distance[3] / velocity[2], destination[4]);
-            monstermove5 = MoveTo::create(distance[4] / velocity[2], destination[5]);
-            auto fadeout = FadeOut::create(0.5f);
-           
         }
         break;
         case 3:
@@ -127,12 +110,6 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
             monster->runAction(RepeatForever::create(animate));
             //怪物运动
             scalemove1 = ScaleBy::create(0.1, 0.5f);
-            monstermove1 = MoveTo::create(distance[0] / velocity[3], destination[1]);
-            monstermove2 = MoveTo::create(distance[1] / velocity[3], destination[2]);
-            monstermove3 = MoveTo::create(distance[2] / velocity[3], destination[3]);
-            monstermove4 = MoveTo::create(distance[3] / velocity[3], destination[4]);
-            monstermove5 = MoveTo::create(distance[4] / velocity[3], destination[5]);
-            auto fadeout = FadeOut::create(0.5f);
            
         }
         break;
@@ -157,13 +134,6 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
             monster->runAction(RepeatForever::create(animate));
             //怪物运动
             scalemove1 = ScaleBy::create(0.1, 0.5f);
-            monstermove1 = MoveTo::create(distance[0] / velocity[4], destination[1]);
-            monstermove2 = MoveTo::create(distance[1] / velocity[4], destination[2]);
-            monstermove3 = MoveTo::create(distance[2] / velocity[4], destination[3]);
-            monstermove4 = MoveTo::create(distance[3] / velocity[4], destination[4]);
-            monstermove5 = MoveTo::create(distance[4] / velocity[4], destination[5]);
-            auto fadeout = FadeOut::create(0.5f);
-            
         }
         break;
         case 5:
@@ -187,13 +157,6 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
             monster->runAction(RepeatForever::create(animate));
             //怪物运动
             scalemove1 = ScaleBy::create(0.1, 0.5f);
-            monstermove1 = MoveTo::create(distance[0] / velocity[5], destination[1]);
-            monstermove2 = MoveTo::create(distance[1] / velocity[5], destination[2]);
-            monstermove3 = MoveTo::create(distance[2] / velocity[5], destination[3]);
-            monstermove4 = MoveTo::create(distance[3] / velocity[5], destination[4]);
-            monstermove5 = MoveTo::create(distance[4] / velocity[5], destination[5]);
-            auto fadeout = FadeOut::create(0.5f);
-      
         }
         break;
         case 6:
@@ -217,47 +180,70 @@ void Monster::initMonster(std::vector<Vec2>InflectionPoint, std::vector<float>di
             monster->runAction(RepeatForever::create(animate));
             //怪物运动
             scalemove1 = ScaleBy::create(0.1, 0.5f);
-            monstermove1 = MoveTo::create(distance[0] / velocity[6], destination[1]);
-            monstermove2 = MoveTo::create(distance[1] / velocity[6], destination[2]);
-            monstermove3 = MoveTo::create(distance[2] / velocity[6], destination[3]);
-            monstermove4 = MoveTo::create(distance[3] / velocity[6], destination[4]);
-            monstermove5 = MoveTo::create(distance[4] / velocity[6], destination[5]);
-           
             
         }
         break;
     }
+
+   
+    auto changeEnd = CallFunc::create([=]() {
+        if (!isDead) {
+            this->isEnd = true;
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+        }
+        });
 
     auto startUpdate = CallFunc::create([this]() {
         // 使用schedule函数来每秒调用update方法
         this->schedule(CC_SCHEDULE_SELECTOR(Monster::update), 0.1f); // 1.0f代表每秒更新一次
         });
 
-    auto fadeout = FadeOut::create(0.5f);
-    auto seq = Sequence::create(startUpdate,scalemove1, monstermove1, monstermove2, monstermove3, monstermove4, monstermove5, fadeout, nullptr);
+    Vector<FiniteTimeAction*> allActions;
+
+    // 将之前的动作添加到数组中
+    allActions.pushBack(startUpdate);
+    allActions.pushBack(scalemove1);
+
+    // 循环添加移动动作到动作数组中
+    for (size_t i = 1; i < destination.size(); ++i) {
+        auto moveAction = MoveTo::create(distance[i - 1] / velocity[type], destination[i]);
+        allActions.pushBack(moveAction);
+    }
+
+    // 添加最后的动作
+    allActions.pushBack(changeEnd);
+
+    // 创建一个动作序列
+    auto seq = Sequence::create(allActions);
+
+    // 运行动作序列
     monster->runAction(seq);
 }
 
 void Monster::update(float dt) {
-    if (blood[type] <= 0) {
+    if (blood[type] <= 0&&!isDead) {
         isDead = true;
-        //this->removeFromParent();
+        auto dead = CallFunc::create([=]() {
+            monster->setVisible(false);
+            auto Cloud = Sprite::create("effect2.png");
+            this->addChild(Cloud, 1);
+            Cloud->setPosition(monster->getPosition());
+            auto scalemove = ScaleBy::create(0.1, 2.0f);
+            auto fadeout = FadeOut::create(1.0f);
+            auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+            Cloud->runAction(seq1);
+            });
+        this->runAction(dead);
     }
-    /* if (!isAttackingMe.empty()) {
-        for (unsigned int i = 0; i < isAttackingMe.size(); i++) {
-            
-           if (isAttackingMe[i]->type == 2) {
-                velocity[type] *= 0.5;
-                auto delay = DelayTime::create(3.0f);
-                auto changeValue = CallFunc::create(CC_CALLBACK_0(Monster::recover, this));
-                auto sequence = Sequence::create(delay, changeValue, nullptr);
-                this->schedule([this](float dt) {
-                  
-                    }, 0.016f, "follower_update");
-                this->runAction(sequence);
-            }
-        }
-    }*/
+   
+  
 }
 
 void Monster::recover() {
