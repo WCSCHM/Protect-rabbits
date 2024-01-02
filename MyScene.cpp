@@ -1,4 +1,6 @@
 #include "MyScene.h"
+#include"Adventure.h"
+#include"HelloWorldScene.h"
 #include"Map.h"
 #include"Tower.h";
 #include"Bullet.h"
@@ -17,6 +19,7 @@ MyScene* MyScene::createScene()
 {
     return MyScene::create();
 }
+
 bool MyScene::init()
 {
     if (!Scene::init())
@@ -98,7 +101,7 @@ bool MyScene::init()
     BarrierPoint.push_back(b12);
     ////////////////////////////////////////////////////////
 
-   
+
     for (int j = 0; j < 12; j++) {
         Barrier[j].pos = BarrierPoint[j];
         Barrier[j].type->setPosition(Barrier[j].pos);
@@ -129,9 +132,9 @@ bool MyScene::init()
         float d = InflectionPoint[i].distance(InflectionPoint[i + 1]);
         distance.push_back(d);
     }
-    
+
     if (!isAdded) {
-        auto mouseListener = EventListenerMouse::create();
+        mouseListener = EventListenerMouse::create();
         mouseListener->onMouseDown = [this](Event* event) {
             EventMouse* e = (EventMouse*)event;
             if (e->getMouseButton() == EventMouse::MouseButton::BUTTON_LEFT) {
@@ -144,6 +147,7 @@ bool MyScene::init()
         this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(mouseListener, this);
         isAdded = true;
     }
+
     // 在你的初始化函数中设置初始值
     isPause0Visible = true;
 
@@ -158,9 +162,60 @@ bool MyScene::init()
     pause_1->setVisible(false);
     this->addChild(pause_1, 3);
 
+    // 在初始化的地方添加触摸事件监听器
+    touchListener = EventListenerTouchOneByOne::create();
+    touchListener->setSwallowTouches(true);
+
+    touchListener->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForPause, this);
+    // 添加触摸事件监听器到事件分发器
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, pause_0);
+
+    //载入目录键
+    //目录
+    menu = Sprite::create("menu.png");
+    menu->setPosition(Vec2(880 * scaleX, 605 * scaleY));
+    this->addChild(menu, 3);
+    listener_3 = EventListenerTouchOneByOne::create();
+    listener_3->setSwallowTouches(true);
+    listener_3->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForMenu, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_3, this);
+    //按目录键之后的显示
+    adv_menu_bg = Sprite::create("adv_menu_bg.png");
+    adv_menu_bg->setPosition(Vec2(480 * scaleX, 340 * scaleY));
+    adv_menu_bg->setVisible(false);
+    this->addChild(adv_menu_bg, 4);
+    //按目录键之后的继续游戏键
+    btn_green_b = Sprite::create("btn_green_b.png");
+    btn_green_b->setPosition(Vec2(480 * scaleX, 422 * scaleY));
+    btn_green_b->setVisible(false);
+    this->addChild(btn_green_b, 5);
+    adv_menu_continue = Sprite::create("adv_menu_continue.png");
+    adv_menu_continue->setPosition(Vec2(480 * scaleX, 422 * scaleY));
+    adv_menu_continue->setVisible(false);
+    this->addChild(adv_menu_continue, 6);
+
+    listener_btn_green_b = EventListenerTouchOneByOne::create();
+    listener_btn_green_b->setSwallowTouches(true);
+    listener_btn_green_b->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnGreenB, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_btn_green_b, btn_green_b);
+
+    //按目录键之后的回主菜单键
+    btn_blue_b = Sprite::create("btn_blue_b.png");
+    btn_blue_b->setPosition(Vec2(480 * scaleX, 314 * scaleY));
+    btn_blue_b->setVisible(false);
+    this->addChild(btn_blue_b, 5);
+    adv_menu_home = Sprite::create("adv_menu_home.png");
+    adv_menu_home->setPosition(Vec2(480 * scaleX, 314 * scaleY));
+    adv_menu_home->setVisible(false);
+    this->addChild(adv_menu_home, 6);
+
+    listener_home = EventListenerTouchOneByOne::create();
+    listener_home->setSwallowTouches(true);
+    listener_home->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnBlueB, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_home, btn_blue_b);
 
 
-     //载入地图背景
+    //载入地图背景
     auto BG = Sprite::create("BG1.png");
     BG->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
     this->addChild(BG, 0);
@@ -174,7 +229,7 @@ bool MyScene::init()
     fflag->setPosition(Vec2(135 * scaleX, 525 * scaleY));
     this->addChild(fflag, 2);
 
-    
+
 
     // 转换硬编码坐标为相对坐标
     Vec2 point1 = Vec2(130 * scaleX, 435 * scaleY + dsh / 2.0f);
@@ -188,16 +243,25 @@ bool MyScene::init()
     top_bg->setPosition(Vec2(480 * scaleX, 610 * scaleY));
     this->addChild(top_bg, 2);
 
-    //暂停键
-    pause_0 = Sprite::create("pause_0.png");
-    pause_0->setPosition(Vec2(800 * scaleX, 605 * scaleY));
-    this->addChild(pause_0, 2);
+  
 
 
     //速度
-    auto speed_0 = Sprite::create("speed_0.png");
+    speed_0 = Sprite::create("speed_0.png");
     speed_0->setPosition(Vec2(700 * scaleX, 603 * scaleY));
     this->addChild(speed_0, 2);
+    speed_1 = Sprite::create("speed_1.png");
+    speed_1->setPosition(Vec2(700 * scaleX, 603 * scaleY));
+    speed_1->setVisible(false);
+    this->addChild(speed_1, 2);
+    // 在初始化的地方添加触摸事件监听器
+    touchListener_2 = EventListenerTouchOneByOne::create();
+    touchListener_2->setSwallowTouches(true);
+
+    touchListener_2->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForSpeed, this);
+    // 添加触摸事件监听器到事件分发器
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener_2, speed_0);
+
     //第几波怪物的显示
     auto waves_bg = Sprite::create("waves_bg.png");
     waves_bg->setPosition(Vec2(480 * scaleX, 603 * scaleY));
@@ -314,7 +378,7 @@ bool MyScene::init()
         Node->blank->setVisible(false);
         Node->position = towerPosition[i];
         Node->direction = towerDirection[i];
-        Node->ptr =Node;
+        Node->ptr = Node;
         Node->No = i;
         this->addChild(Node->blank, 2);
         blanks.push_back(*Node);
@@ -326,13 +390,13 @@ bool MyScene::init()
     label->setTextColor(Color4B::WHITE);
     this->addChild(label, 5);
     // 定期更新Label
-    this->schedule([label,this](float dt) {
+    this->schedule([label, this](float dt) {
         label->setString(std::to_string(money));
         }, 0.1f, "update_label");
 
 
     //在空白处放障碍物
-    
+
     //放置萝卜
     // //萝卜的移动
     auto carrotsLayer = Carrots::create();
@@ -408,11 +472,11 @@ bool MyScene::init()
     auto scalemove1 = ScaleBy::create(0.1, 0.3f);
     carrotsblo1->runAction(scalemove1);
     carrotsblo1->setVisible(false);
-    
+
 
     //一个怪物
 
-    nhSprite_2->setPosition(Vec2(0, 0));
+  /*  nhSprite_2->setPosition(Vec2(0, 0));
 
     // 创建一个移动动作
     moveAction = MoveTo::create(5.0f, Vec2(500, 500));
@@ -421,7 +485,7 @@ bool MyScene::init()
     nhSprite_2->runAction(moveAction);
 
     // 添加精灵到场景
-    this->addChild(nhSprite_2, 2);
+    this->addChild(nhSprite_2, 2);*/
 
 
     // 怪物总波数
@@ -440,7 +504,7 @@ bool MyScene::init()
         }, 0.1f, "updatecurrentwave");
 
 
-    
+
     //进行游戏开场的倒计时
     countdownValue = 3;
     auto countdownlabel = Label::createWithTTF(std::to_string(countdownValue), "fonts/Marker Felt.ttf", 92);
@@ -457,36 +521,36 @@ bool MyScene::init()
                     labelend->setTextColor(Color4B::RED);
                     this->addChild(labelend, 5);
                     Director::getInstance()->pause();
-                    } 
-				isTimeActive = true;
-				//spriteOnStage.clear();
-				//bloodbarForSprite.clear();
+                }
+                isTimeActive = true;
+                //spriteOnStage.clear();
+                //bloodbarForSprite.clear();
             }
-            countdownValue--;
-            if (countdownValue == 0)
-            {
-                countdownlabel->setVisible(false);
-                this->schedule([this](float dt) {
-                    if (!isTimeActive)
-                        return;
-                    static int count = 0;
-                    int T = rand() % 6 + 1;
-                    auto a = Monster::CreateMonster();
-                    auto aa = Bloodbar::CreateBloodbar();
-                    a->initMonster(InflectionPoint, distance, this, T);
-                    aa->initBloodbar(InflectionPoint, distance, this, T, a->blood[a->type]);
-                    spriteOnStage.push_back(a);
-                    bloodbarForSprite.push_back(aa);
-                    this->addChild(a, 3);
-                    this->addChild(aa, 3);
-                    count++;
-                    if (count % 10 == 0) {
-                        isTimeActive = false;
-                        currentwave++;
-                    }
-                    }, 1.0f, "generateSprite");
-            }
-            countdownlabel->setString(std::to_string(countdownValue));
+    countdownValue--;
+    if (countdownValue == 0)
+    {
+        countdownlabel->setVisible(false);
+        this->schedule([this](float dt) {
+            if (!isTimeActive)
+            return;
+        static int count = 0;
+        int T = rand() % 6 + 1;
+        auto a = Monster::CreateMonster();
+        auto aa = Bloodbar::CreateBloodbar();
+        a->initMonster(InflectionPoint, distance, this, T);
+        aa->initBloodbar(InflectionPoint, distance, this, T, a->blood[a->type]);
+        spriteOnStage.push_back(a);
+        bloodbarForSprite.push_back(aa);
+        this->addChild(a, 3);
+        this->addChild(aa, 3);
+        count++;
+        if (count % 10 == 0) {
+            isTimeActive = false;
+            currentwave++;
+        }
+            }, 1.0f, "generateSprite");
+    }
+    countdownlabel->setString(std::to_string(countdownValue));
 
         }, 1.0f, "update_countdownlabel");
 
@@ -495,92 +559,92 @@ bool MyScene::init()
     this->schedule([=](float dt)
         {
             int monstersReachedEnd = 0;
-            for (int i = 0; i < spriteOnStage.size(); i++) {
-                monstersReachedEnd += spriteOnStage[i]->isEnd;
-            }
-            
-            if (monstersReachedEnd > 0 && monstersReachedEnd < 4)
-            {
-                CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
-                // 调用 CarrotsLayer 中的方法来停止动画
-                carrotsLayer->stopAnimation1();
-                //开始第二段动画
-                carrotsLayer->MoveforCarrots2(0.0);
-            }
-            if (monstersReachedEnd >= 4)
-            {
-                CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
-                // 调用 CarrotsLayer 中的方法来停止动画
-                carrotsLayer->stopAnimation1();
-                //开始第二段动画
-                carrotsLayer->MoveforCarrots3(0.0);
-            }
-            if (monstersReachedEnd == 1)
-            {
-                carrotsblo10->setVisible(false);
-                carrotsblo9->setVisible(true);
-            }
-            if (monstersReachedEnd == 2)
-            {
-                carrotsblo9->setVisible(false);
-                carrotsblo8->setVisible(true);
-            }
-            if (monstersReachedEnd == 3)
-            {
-                carrotsblo8->setVisible(false);
-                carrotsblo7->setVisible(true);
-            }
-            if (monstersReachedEnd == 4)
-            {
-                carrotsblo7->setVisible(false);
-                carrotsblo6->setVisible(true);
-            }
-            if (monstersReachedEnd == 5)
-            {
-                carrotsblo6->setVisible(false);
-                carrotsblo5->setVisible(true);
-            }
-            if (monstersReachedEnd == 6)
-            {
-                carrotsblo5->setVisible(false);
-                carrotsblo4->setVisible(true);
-            }
-            if (monstersReachedEnd == 7)
-            {
-                carrotsblo4->setVisible(false);
-                carrotsblo3->setVisible(true);
-            }
-            if (monstersReachedEnd == 8)
-            {
-                carrotsblo3->setVisible(false);
-                carrotsblo2->setVisible(true);
-            }
-            if (monstersReachedEnd == 9)
-            {
-                carrotsblo2->setVisible(false);
-                carrotsblo1->setVisible(true);
-            }
-            if (monstersReachedEnd == 10)
-            {
-                carrotsblo1->setVisible(false);
-                auto labelend = Label::createWithTTF("GAME OVER", "fonts/Marker Felt.ttf", 120);
-                labelend->setPosition(480, 320);
-                labelend->setTextColor(Color4B::BLACK);
-                this->addChild(labelend, 5);
-                Director::getInstance()->pause();
-            }
+    for (int i = 0; i < spriteOnStage.size(); i++) {
+        monstersReachedEnd += spriteOnStage[i]->isEnd;
+    }
+
+    if (monstersReachedEnd > 0 && monstersReachedEnd < 4)
+    {
+        CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
+        // 调用 CarrotsLayer 中的方法来停止动画
+        carrotsLayer->stopAnimation1();
+        //开始第二段动画
+        carrotsLayer->MoveforCarrots2(0.0);
+    }
+    if (monstersReachedEnd >= 4)
+    {
+        CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
+        // 调用 CarrotsLayer 中的方法来停止动画
+        carrotsLayer->stopAnimation1();
+        //开始第二段动画
+        carrotsLayer->MoveforCarrots3(0.0);
+    }
+    if (monstersReachedEnd == 1)
+    {
+        carrotsblo10->setVisible(false);
+        carrotsblo9->setVisible(true);
+    }
+    if (monstersReachedEnd == 2)
+    {
+        carrotsblo9->setVisible(false);
+        carrotsblo8->setVisible(true);
+    }
+    if (monstersReachedEnd == 3)
+    {
+        carrotsblo8->setVisible(false);
+        carrotsblo7->setVisible(true);
+    }
+    if (monstersReachedEnd == 4)
+    {
+        carrotsblo7->setVisible(false);
+        carrotsblo6->setVisible(true);
+    }
+    if (monstersReachedEnd == 5)
+    {
+        carrotsblo6->setVisible(false);
+        carrotsblo5->setVisible(true);
+    }
+    if (monstersReachedEnd == 6)
+    {
+        carrotsblo5->setVisible(false);
+        carrotsblo4->setVisible(true);
+    }
+    if (monstersReachedEnd == 7)
+    {
+        carrotsblo4->setVisible(false);
+        carrotsblo3->setVisible(true);
+    }
+    if (monstersReachedEnd == 8)
+    {
+        carrotsblo3->setVisible(false);
+        carrotsblo2->setVisible(true);
+    }
+    if (monstersReachedEnd == 9)
+    {
+        carrotsblo2->setVisible(false);
+        carrotsblo1->setVisible(true);
+    }
+    if (monstersReachedEnd == 10)
+    {
+        carrotsblo1->setVisible(false);
+        auto labelend = Label::createWithTTF("GAME OVER", "fonts/Marker Felt.ttf", 120);
+        labelend->setPosition(480, 320);
+        labelend->setTextColor(Color4B::BLACK);
+        this->addChild(labelend, 5);
+        Director::getInstance()->pause();
+    }
         }, 0.1f, "monsterCheckScheduler");
 
     Brain();
-    
+
     return true;
 
- 
+
 }
 
 void MyScene::Brain() {
 
-	this->schedule(CC_SCHEDULE_SELECTOR(MyScene::updateSprite), 0.1f); // 1.0f代表每秒更新一次
+    this->schedule(CC_SCHEDULE_SELECTOR(MyScene::updateSprite), 0.1f); // 1.0f代表每秒更新一次
 
 }
 
@@ -590,7 +654,7 @@ void MyScene::updateSprite(float dt) {
         if (!spriteOnStage[i]->isChecked) {
 
             //精灵已经阵亡
-            if ((spriteOnStage[i]->isDead && !spriteOnStage[i]->isChecked)|| spriteOnStage[i]->isEnd) {
+            if ((spriteOnStage[i]->isDead && !spriteOnStage[i]->isChecked) || spriteOnStage[i]->isEnd) {
                 //精灵死后爆金币
                 if (spriteOnStage[i]->isDead) {
                     money += 50;
@@ -621,13 +685,13 @@ void MyScene::updateSprite(float dt) {
                         //精灵处于防御塔的攻击范围且防御塔不在攻击,并且精灵i与防御塔j之间的的关系还没有建立
                         std::string schedulerName = "update_position_scheduler_" + std::to_string(i) + std::to_string(j);
                         bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(schedulerName, this);
-                        
-                        if (distance <= blanks[j].tower->attackRange && (!blanks[j].isAttacking)&&(!isScheduled)) {
+
+                        if (distance <= blanks[j].tower->attackRange && (!blanks[j].isAttacking) && (!isScheduled)) {
                             //CCLOG("%d", spriteOnStage[i]->type);
                             std::string schedulerName = "update_position_scheduler_" + std::to_string(i) + std::to_string(j);
                             this->schedule([i, j, this](float dt) {
                                 Vec2 currentPosition = spriteOnStage[i]->monster->getPosition();
-                                blanks[j].tower->setIncoming(currentPosition);
+                            blanks[j].tower->setIncoming(currentPosition);
                                 }, 0.3f, schedulerName);
                             CCLOG("The string is: %s", schedulerName.c_str());
                             blanks[j].isAttacking = true;
@@ -637,7 +701,7 @@ void MyScene::updateSprite(float dt) {
                         }
 
                         //发现精灵超出了防御塔范围
-                        else if (distance >= blanks[j].tower->attackRange&&isScheduled) {
+                        else if (distance >= blanks[j].tower->attackRange && isScheduled) {
                             //查看精灵i与防御塔j之间是否存在定时器
                             if (isScheduled) {//如果有
                                 blanks[j].tower->setIncoming(Vec2(INT_MAX, INT_MAX));
@@ -690,15 +754,15 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
 
 
     Rect pathRect = Path->getBoundingBox();
-    if (pathRect.containsPoint(touchLocation)&&!selected&&!selectedChoice) {
+    if (pathRect.containsPoint(touchLocation) && !selected && !selectedChoice) {
         for (int k = 0; k < spriteOnStage.size(); k++) {
-            if (spriteOnStage[k]->monster->getPosition().distance(location) < 30&& !spriteOnStage[k]->isDead) {
+            if (spriteOnStage[k]->monster->getPosition().distance(location) < 30 && !spriteOnStage[k]->isDead) {
                 for (int i = 0; i < blanks.size(); i++) {
-                    if (blanks[i].isOccupied &&blanks[i].position.distance(location) <= blanks[i].tower->attackRange) {
+                    if (blanks[i].isOccupied && blanks[i].position.distance(location) <= blanks[i].tower->attackRange) {
                         std::string scheduler1 = "update_position_scheduler_" + std::to_string(blanks[i].tower->spriteNum) + std::to_string(blanks[i].tower->No);
                         bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(scheduler1, this);
                         if (isScheduled)
-                            this->unschedule(scheduler1); 
+                            this->unschedule(scheduler1);
                         std::string scheduler2 = "barrier" + std::to_string(blanks[i].tower->No) + std::to_string(blanks[i].tower->barrierNum);
                         isScheduled = Director::getInstance()->getScheduler()->isScheduled(scheduler2, this);
                         if (isScheduled) {
@@ -709,7 +773,7 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
                         std::string schedulerName = "update_position_scheduler_" + std::to_string(k) + std::to_string(i);
                         this->schedule([i, k, this](float dt) {
                             Vec2 currentPosition = spriteOnStage[k]->monster->getPosition();
-                            blanks[i].tower->setIncoming(currentPosition);
+                        blanks[i].tower->setIncoming(currentPosition);
                             }, 0.3f, schedulerName);
                         blanks[i].isAttacking = true;
                         blanks[i].tower->spriteNum = k;//把正在攻击的精灵序号存起来,表示blanks[j]的防御塔正在攻击精灵i
@@ -725,8 +789,8 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
     if (selected) {
         Rect bottleRect = bottleSprite->getBoundingBox();
         Rect shitRect = shitSprite->getBoundingBox();
-        Rect starRect=starSprite->getBoundingBox();
-        if (bottleRect.containsPoint(touchLocation)&&money>=100) {//点击瓶子位置，放置防御塔
+        Rect starRect = starSprite->getBoundingBox();
+        if (bottleRect.containsPoint(touchLocation) && money >= 100) {//点击瓶子位置，放置防御塔
             money -= 100;
             blanks[selectedBlankIndex].isOccupied = true;
             bottleSprite->setVisible(false);
@@ -735,7 +799,7 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
             selectSprite->setVisible(false);
             Tower* newTower = new Tower;
             newTower = Tower::createTower();
-            newTower->placeTower(newPos.position,newPos.direction,this,1, selectedBlankIndex);
+            newTower->placeTower(newPos.position, newPos.direction, this, 1, selectedBlankIndex);
             newTower->enemyBloodbar = &bloodbarForSprite;
             newTower->barrierBloodbar = &bloodbarForBarrier;
             newTower->enemies = &spriteOnStage;
@@ -745,7 +809,7 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
             this->addChild(newTower, 3);
             return;
         }
-        else if (shitRect.containsPoint(touchLocation)&&money>=120) {
+        else if (shitRect.containsPoint(touchLocation) && money >= 120) {
             money -= 120;
             blanks[selectedBlankIndex].isOccupied = true;
             bottleSprite->setVisible(false);
@@ -764,7 +828,7 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
             this->addChild(newTower, 3);
             return;
         }
-        else if (starRect.containsPoint(touchLocation)&&money>=160) {
+        else if (starRect.containsPoint(touchLocation) && money >= 160) {
             money -= 160;
             blanks[selectedBlankIndex].isOccupied = true;
             bottleSprite->setVisible(false);
@@ -796,7 +860,7 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
 
     if (selectedChoice) {
         Rect upgradeRect = upgradeSprite->getBoundingBox();
-        Rect removeRect=removeSprite->getBoundingBox();
+        Rect removeRect = removeSprite->getBoundingBox();
         if (upgradeRect.containsPoint(touchLocation)) {//升级防御塔
             if ((money >= 180 && blanks[selectedBlankIndex].tower->level == 1) || (money >= 380 && blanks[selectedBlankIndex].tower->level == 2)) {
                 if (blanks[selectedBlankIndex].tower->level != 3) {
@@ -812,8 +876,8 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
             if (blanks[selectedBlankIndex].tower->level == 1) money += 80;
             else if (blanks[selectedBlankIndex].tower->level == 2)money += 160;
             else if (blanks[selectedBlankIndex].tower->level == 3) money += 320;
-            
-            auto Stop=CallFunc::create([this]() {
+
+            auto Stop = CallFunc::create([this]() {
                 if (blanks[selectedBlankIndex].isAttacking) {//如果这个防御塔正在攻击精灵
                     //把定时器删掉
                     //如果
@@ -827,8 +891,8 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
                             this->unschedule(barrierScheduler);
                     }
                 }
-                blanks[selectedBlankIndex].tower->stopAllActions();
-                blanks[selectedBlankIndex].tower->setVisible(false);
+            blanks[selectedBlankIndex].tower->stopAllActions();
+            blanks[selectedBlankIndex].tower->setVisible(false);
                 });
             auto delay_to_remove = DelayTime::create(1.0f);
             auto removeTower = CallFunc::create([this]() {
@@ -855,12 +919,12 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
     for (int i = 0; i < blanks.size(); ++i)
     {
         Rect blankRect = blanks[i].blank->getBoundingBox();
-        
-        if (blankRect.containsPoint(touchLocation)&&!blanks[i].isOccupied)
+
+        if (blankRect.containsPoint(touchLocation) && !blanks[i].isOccupied)
         {
             newPos = blanks[i];
 
-            
+
             // 点击在了某个 blank 区域上，记录选中的 blank 索引
             selectedBlankIndex = i;
 
@@ -879,12 +943,12 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
 
             // 显示 Bottle01.png 在 (x, y + 70) 位置
             bottleSprite = showBottleSprite(Vec2(blankCenter.x, blankCenter.y + 70));
-            shitSprite= showShitSprite(Vec2(blankCenter.x+70, blankCenter.y + 70));
-            starSprite= showStarSprite(Vec2(blankCenter.x - 70, blankCenter.y + 70));
+            shitSprite = showShitSprite(Vec2(blankCenter.x + 70, blankCenter.y + 70));
+            starSprite = showStarSprite(Vec2(blankCenter.x - 70, blankCenter.y + 70));
             selected = true;
             return;
         }
-        else if (blanks[i].isOccupied ) {
+        else if (blanks[i].isOccupied) {
             Rect pedestalRect = blanks[i].tower->pedestal->getBoundingBox();
             if (pedestalRect.containsPoint(touchLocation)) {
                 selectedChoice = true;
@@ -898,11 +962,11 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
     }
 
     for (int k = 0; k < Barrier.size(); k++) {
-        Rect barrierRect=Barrier[k].type->getBoundingBox();
+        Rect barrierRect = Barrier[k].type->getBoundingBox();
 
-        if (barrierRect.containsPoint(touchLocation)&& Barrier[k].barrierBlood>0) {
+        if (barrierRect.containsPoint(touchLocation) && Barrier[k].barrierBlood > 0) {
             for (int t = 0; t < blanks.size(); t++) {
-                if (blanks[t].isOccupied&&Barrier[k].pos.distance(blanks[t].tower->pos)<= blanks[t].tower->attackRange) {
+                if (blanks[t].isOccupied && Barrier[k].pos.distance(blanks[t].tower->pos) <= blanks[t].tower->attackRange) {
                     if (blanks[t].isAttacking) {
                         std::string schedulerName = "update_position_scheduler_" + std::to_string(blanks[t].tower->spriteNum) + std::to_string(blanks[t].No);
                         bool isScheduled = Director::getInstance()->getScheduler()->isScheduled(schedulerName, this);
@@ -916,38 +980,38 @@ void MyScene::onTouchBeganForBlank(Vec2 location) {
                             blanks[t].tower->isAttackingBarrier = false;
                         }
                     }
-                    this->schedule([this,t,k](float dt) {
+                    this->schedule([this, t, k](float dt) {
                         Vec2 currentPosition = Barrier[k].pos;
-                        blanks[t].tower->setIncoming(currentPosition);
-                        if (Barrier[k].barrierBlood <= 0) {
-                            money += 200;
-                            Barrier[k].type->setVisible(false);
-                            this->unschedule("barrier" + std::to_string(t) + std::to_string(k));
-                            blanks[t].tower->setIncoming(Vec2(INT_MAX, INT_MAX));
-                            blanks[t].isAttacking = false;
-                            blanks[t].tower->isAttackingBarrier = false;
-                            auto dead = CallFunc::create([this,k]() {
-                                auto Cloud = Sprite::create("effect2.png");
-                                this->addChild(Cloud, 1);
-                                Cloud->setPosition(Barrier[k].pos);
-                                auto scalemove = ScaleBy::create(0.1, 2.0f);
-                                auto fadeout = FadeOut::create(1.0f);
-                                auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
-                                Cloud->runAction(seq1);
-                                });
-                            this->runAction(dead);
-                            BLANK* Node = new BLANK;
-                            Node->blank = Sprite::create("select_01.png");
-                            Node->blank->setPosition(Barrier[k].pos);
-                            Node->blank->setVisible(false);
-                            Node->position = Barrier[k].pos;
-                            Node->direction = 0;
-                            Node->ptr = Node;
-                            Node->No = blanks.size();
-                            this->addChild(Node->blank, 2);
-                            blanks.push_back(*Node);
-                        }
-                        }, 0.3f, "barrier"+ std::to_string(t)+ std::to_string(k));
+                    blanks[t].tower->setIncoming(currentPosition);
+                    if (Barrier[k].barrierBlood <= 0) {
+                        money += 200;
+                        Barrier[k].type->setVisible(false);
+                        this->unschedule("barrier" + std::to_string(t) + std::to_string(k));
+                        blanks[t].tower->setIncoming(Vec2(INT_MAX, INT_MAX));
+                        blanks[t].isAttacking = false;
+                        blanks[t].tower->isAttackingBarrier = false;
+                        auto dead = CallFunc::create([this, k]() {
+                            auto Cloud = Sprite::create("effect2.png");
+                        this->addChild(Cloud, 1);
+                        Cloud->setPosition(Barrier[k].pos);
+                        auto scalemove = ScaleBy::create(0.1, 2.0f);
+                        auto fadeout = FadeOut::create(1.0f);
+                        auto seq1 = Sequence::create(scalemove, fadeout, nullptr);
+                        Cloud->runAction(seq1);
+                            });
+                        this->runAction(dead);
+                        BLANK* Node = new BLANK;
+                        Node->blank = Sprite::create("select_01.png");
+                        Node->blank->setPosition(Barrier[k].pos);
+                        Node->blank->setVisible(false);
+                        Node->position = Barrier[k].pos;
+                        Node->direction = 0;
+                        Node->ptr = Node;
+                        Node->No = blanks.size();
+                        this->addChild(Node->blank, 2);
+                        blanks.push_back(*Node);
+                    }
+                        }, 0.3f, "barrier" + std::to_string(t) + std::to_string(k));
                     blanks[t].isAttacking = true;
                     blanks[t].tower->isAttackingBarrier = true;
                     blanks[t].tower->barrierNum = k;
@@ -1000,10 +1064,10 @@ Sprite* MyScene::showBottleSprite(const Vec2& position)
     }
 
     // 创建并显示新的 Bottle01.png 精灵
-    if(money<100)
-        bottleSprite= Sprite::create("Bottle00.png");
-	else
-		bottleSprite = Sprite::create("Bottle01.png");
+    if (money < 100)
+        bottleSprite = Sprite::create("Bottle00.png");
+    else
+        bottleSprite = Sprite::create("Bottle01.png");
     bottleSprite->setPosition(position);
     this->addChild(bottleSprite, 4);
     return bottleSprite;
@@ -1018,10 +1082,10 @@ Sprite* MyScene::showShitSprite(const Vec2& position)
     }
 
     // 创建并显示新的 Bottle01.png 精灵
-    if(money<120)
+    if (money < 120)
         shitSprite = Sprite::create("Shit0.png");
-	else
-		shitSprite = Sprite::create("Shit.png");
+    else
+        shitSprite = Sprite::create("Shit.png");
     shitSprite->setPosition(position);
     this->addChild(shitSprite, 4);
     return shitSprite;
@@ -1034,7 +1098,7 @@ Sprite* MyScene::showStarSprite(const Vec2& position) {
     }
 
     // 创建并显示新的 Bottle01.png 精灵
-    if(money<160)
+    if (money < 160)
         starSprite = Sprite::create("Star01.png");
     else
         starSprite = Sprite::create("Star00.png");
@@ -1054,32 +1118,32 @@ Sprite* MyScene::showUpgradeSprite(Vec2 position, Tower* tower) {
         upgradeSprite->removeFromParent();
     }
 
-	if (tower->level == 1) {
-        if(money<180)
+    if (tower->level == 1) {
+        if (money < 180)
             upgradeSprite = Sprite::create("0upgrade1.png");
         else
-		    upgradeSprite = Sprite::create("1upgrade1.png");
-		upgradeSprite->setPosition(position);
-		this->addChild(upgradeSprite, 4);
-		return upgradeSprite;
-	}
-	else if (tower->level == 2) {
+            upgradeSprite = Sprite::create("1upgrade1.png");
+        upgradeSprite->setPosition(position);
+        this->addChild(upgradeSprite, 4);
+        return upgradeSprite;
+    }
+    else if (tower->level == 2) {
         if (money < 380)
             upgradeSprite = Sprite::create("0upgrade2.png");
         else
             upgradeSprite = Sprite::create("1upgrade2.png");
-		upgradeSprite->setPosition(position);
-		this->addChild(upgradeSprite, 4);
-		return upgradeSprite;
-	}
-	else if (tower->level == 3) {
-		upgradeSprite = Sprite::create("upgrade3.png");
-		upgradeSprite->setPosition(position);
-		this->addChild(upgradeSprite, 4);
-		return upgradeSprite;
-	}
+        upgradeSprite->setPosition(position);
+        this->addChild(upgradeSprite, 4);
+        return upgradeSprite;
+    }
+    else if (tower->level == 3) {
+        upgradeSprite = Sprite::create("upgrade3.png");
+        upgradeSprite->setPosition(position);
+        this->addChild(upgradeSprite, 4);
+        return upgradeSprite;
+    }
 
-    
+
 }
 
 Sprite* MyScene::showRemoveSprite(Vec2 position, Tower* tower) {
@@ -1088,25 +1152,58 @@ Sprite* MyScene::showRemoveSprite(Vec2 position, Tower* tower) {
         removeSprite->removeFromParent();
     }
 
-	if (tower->level == 1) {
-		removeSprite = Sprite::create("1remove1.png");
-		removeSprite->setPosition(position);
-		this->addChild(removeSprite, 3);
-		return removeSprite;
-	}
-	else if (tower->level == 2) {
-		removeSprite = Sprite::create("1remove2.png");
-		removeSprite->setPosition(position);
-		this->addChild(removeSprite, 3);
-		return removeSprite;
-	}
-	else if (tower->level == 3) {
-		removeSprite = Sprite::create("1remove3.png");
-		removeSprite->setPosition(position);
-		this->addChild(removeSprite, 3);
-		return removeSprite;
-	}
+    if (tower->level == 1) {
+        removeSprite = Sprite::create("1remove1.png");
+        removeSprite->setPosition(position);
+        this->addChild(removeSprite, 3);
+        return removeSprite;
+    }
+    else if (tower->level == 2) {
+        removeSprite = Sprite::create("1remove2.png");
+        removeSprite->setPosition(position);
+        this->addChild(removeSprite, 3);
+        return removeSprite;
+    }
+    else if (tower->level == 3) {
+        removeSprite = Sprite::create("1remove3.png");
+        removeSprite->setPosition(position);
+        this->addChild(removeSprite, 3);
+        return removeSprite;
+    }
 }
+bool MyScene::onTouchBeganForSpeed(cocos2d::Touch* touch, cocos2d::Event* event) {
+    // 获取触摸点位置
+    Vec2 locationInNode = speed_0->convertToNodeSpace(touch->getLocation());
+    Rect rectSpeed0 = Rect(0, 0, speed_0->getContentSize().width, speed_0->getContentSize().height);
+    Rect rectSpeed1 = Rect(0, 0, speed_1->getContentSize().width, speed_1->getContentSize().height);
+
+    // 检查触摸点是否在 speed_0 上
+    if (rectSpeed0.containsPoint(locationInNode) && !speed_1->isVisible()) {
+        // 点击了 speed_0，将 speed_0 设置为不可见，speed_1 设置为可见
+        speed_0->setVisible(false);
+        speed_1->setVisible(true);
+
+        // 将游戏速度设置为二倍
+        Director::getInstance()->getScheduler()->setTimeScale(2.0f);
+
+        return true;
+    }
+
+    // 判断是否点击了 speed_1 区域
+    if (rectSpeed1.containsPoint(locationInNode) && speed_1->isVisible()) {
+        // 点击了 speed_1，将 speed_1 设置为不可见，speed_0 设置为可见
+        speed_1->setVisible(false);
+        speed_0->setVisible(true);
+
+        // 将游戏速度恢复为正常
+        Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+
+        return true;
+    }
+
+    return false;
+}
+
 
 bool MyScene::onTouchBeganForPause(cocos2d::Touch* touch, cocos2d::Event* event) {
     // 获取触摸点位置
@@ -1119,13 +1216,9 @@ bool MyScene::onTouchBeganForPause(cocos2d::Touch* touch, cocos2d::Event* event)
         // 点击了 pause_0，将 pause_0 设置为不可见，pause_1 设置为可见
         pause_0->setVisible(false);
         pause_1->setVisible(true);
-        pause_info->setVisible(true);
 
-        // 暂停游戏逻辑，例如停止调度器
-        this->unscheduleUpdate();
-
-        // 暂停精灵的移动动作
-        nhSprite_2->pause();
+        // 暂停游戏
+        Director::getInstance()->pause();
 
         return true;
     }
@@ -1134,82 +1227,63 @@ bool MyScene::onTouchBeganForPause(cocos2d::Touch* touch, cocos2d::Event* event)
     if (rectPause1.containsPoint(locationInNode) && pause_1->isVisible()) {
         // 点击了 pause_1，将 pause_1 设置为不可见，pause_0 设置为可见
         pause_1->setVisible(false);
-        pause_info->setVisible(false);
         pause_0->setVisible(true);
 
-        // 恢复游戏逻辑，例如重新启动调度器
-        this->scheduleUpdate();
-
-        // 恢复精灵的移动动作
-        nhSprite_2->resume();
+        // 恢复游戏
+        Director::getInstance()->resume();
 
         return true;
     }
 
     return false;
 }
+
 
 bool MyScene::onTouchBeganForBtnGreenB(cocos2d::Touch* touch, cocos2d::Event* event) {
     Vec2 locationInNode = btn_green_b->convertToNodeSpace(touch->getLocation());
     // 您的逻辑处理代码
     Rect continue_position = Rect(0, 0, btn_green_b->getContentSize().width, btn_green_b->getContentSize().height);
     if (continue_position.containsPoint(locationInNode) && btn_green_b->isVisible()) {
-        // 点击了继续游戏
-        hideMenuItems(); // 隐藏相关元素
-
-        // 恢复游戏逻辑，例如重新启动调度器
-        this->scheduleUpdate();
-        // 这里可以添加继续游戏的逻辑
-        nhSprite_2->resume();
+        Director::getInstance()->resume();
+        adv_menu_bg->setVisible(false);
+        btn_green_b->setVisible(false);
+        adv_menu_continue->setVisible(false);
+        btn_blue_b->setVisible(false);
+        adv_menu_home->setVisible(false);
         return true;
     }
     return false;
 }
-bool MyScene::onTouchBeganForBtnBlueB(cocos2d::Touch* touch, cocos2d::Event* event) {
+bool MyScene::onTouchBeganForBtnBlueB(Touch* touch, Event* event) {
     Vec2 locationInNode = btn_blue_b->convertToNodeSpace(touch->getLocation());
-    // 您的逻辑处理代码
-    Rect restart_position = Rect(0, 0, btn_blue_b->getContentSize().width, btn_blue_b->getContentSize().height);
-    if (restart_position.containsPoint(locationInNode) && btn_blue_b->isVisible()) {
-        // 点击了重新开始
-        hideMenuItems(); // 隐藏相关元素
-        // 这里可以添加重新开始游戏的逻辑
+    Rect continue_position = Rect(0, 0, btn_blue_b->getContentSize().width, btn_blue_b->getContentSize().height);
 
-        return true;
+    if (continue_position.containsPoint(locationInNode) && btn_blue_b->isVisible()) {
+      
+        Director::getInstance()->getEventDispatcher()->removeEventListener(touchListener);
+        Director::getInstance()->getEventDispatcher()->removeEventListener(listener_btn_green_b);
+        Director::getInstance()->getEventDispatcher()->removeEventListener(listener_3);
+        Director::getInstance()->getEventDispatcher()->removeEventListener(listener_home);
+        Director::getInstance()->getEventDispatcher()->removeEventListener(touchListener_2);
+        if (isAdded) {
+            this->getEventDispatcher()->removeEventListener(mouseListener);
+            isAdded = false;
+        }
+        Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+        Director::getInstance()->resume();
+        unscheduleAllSelectors();
+        stopAllActions();
+        removeFromParentAndCleanup(true);
+        auto newScene = Adventure::createScene();
+        Director::getInstance()->replaceScene(TransitionSlideInT::create(0.5, newScene));
+        return true; // 消费触摸事件
     }
-    return false;
-}
-bool MyScene::onTouchBeganForBtnBlueL(cocos2d::Touch* touch, cocos2d::Event* event) {
-    Vec2 locationInNode = btn_blue_l->convertToNodeSpace(touch->getLocation());
-    Rect home_position = Rect(0, 0, btn_blue_l->getContentSize().width, btn_blue_l->getContentSize().height);
-    if (home_position.containsPoint(locationInNode) && btn_blue_l->isVisible()) {
-        // 记录 nhSprite_2 的当前位置
-        nhSprite_2_position = nhSprite_2->getPosition();
 
-        // 点击了回主菜单
-        hideMenuItems(); // 隐藏相关元素
-
-        // 切换到myscene_2,并保存游戏进度
-        //Director::getInstance()->pushScene(TransitionFade::create(0.5, MyScene_2::createScene())); // 使用过渡效果
-
-        return true;
-    }
-    return false;
+    return false; // 不消费触摸事件
 }
 
-bool MyScene::onTouchBeganForBtnBlueL_2(cocos2d::Touch* touch, cocos2d::Event* event) {
-    Vec2 locationInNode = btn_blue_l_2->convertToNodeSpace(touch->getLocation());
-    // 您的逻辑处理代码
-    Rect weibo_position = Rect(0, 0, btn_blue_l_2->getContentSize().width, btn_blue_l_2->getContentSize().height);
-    if (weibo_position.containsPoint(locationInNode) && btn_blue_l_2->isVisible()) {
-        // 点击了转发微博
-        hideMenuItems(); // 隐藏相关元素
 
-        // 这里可以添加转发微博的逻辑
 
-        return true;
-    }
-    return false;
-}
 bool MyScene::onTouchBeganForMenu(cocos2d::Touch* touch, cocos2d::Event* event) {
     Vec2 locationInNode = menu->convertToNodeSpace(touch->getLocation());
     Rect menu_position = Rect(0, 0, menu->getContentSize().width, menu->getContentSize().height);
@@ -1222,15 +1296,8 @@ bool MyScene::onTouchBeganForMenu(cocos2d::Touch* touch, cocos2d::Event* event) 
         btn_green_b->setVisible(true);
         adv_menu_continue->setVisible(true);
         btn_blue_b->setVisible(true);
-        adv_menu_restart->setVisible(true);
-        btn_blue_l->setVisible(true);
         adv_menu_home->setVisible(true);
-        btn_blue_l_2->setVisible(true);
-        adv_menu_weibo->setVisible(true);
-        // 暂停游戏逻辑，例如停止调度器
-        this->unscheduleUpdate();
-        // 暂停精灵的移动动作
-        nhSprite_2->pause();
+        Director::getInstance()->pause();
         return true;
     }
 
@@ -1239,18 +1306,7 @@ bool MyScene::onTouchBeganForMenu(cocos2d::Touch* touch, cocos2d::Event* event) 
     return false;
 }
 
-void MyScene::hideMenuItems() {
-    // 隐藏相关元素
-    adv_menu_bg->setVisible(false);
-    btn_green_b->setVisible(false);
-    adv_menu_continue->setVisible(false);
-    btn_blue_b->setVisible(false);
-    adv_menu_restart->setVisible(false);
-    btn_blue_l->setVisible(false);
-    adv_menu_home->setVisible(false);
-    btn_blue_l_2->setVisible(false);
-    adv_menu_weibo->setVisible(false);
-}
+
 
 void MyScene::showSelectSprite()
 {
@@ -1274,4 +1330,12 @@ bool MyScene::isClear() {
             return false;
     }
     return true;
+}
+void MyScene::onExit() {
+    // 停止当前场景的逻辑更新，清理资源等
+    unscheduleUpdate();
+    // 其他清理操作...
+
+    // 调用父类的 onExit 方法
+    Scene::onExit();
 }

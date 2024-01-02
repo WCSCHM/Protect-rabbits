@@ -24,7 +24,7 @@ public:
         BLANK* ptr; //指向该节点的指针
         Tower* tower; //防御塔
         bool isAttacking = false;
-       // std::unique_ptr<Monster>target;
+        // std::unique_ptr<Monster>target;
     };
     // 添加成员变量
     bool isAdded = false;
@@ -32,10 +32,12 @@ public:
     std::vector< Vec2 >BarrierPoint;
     std::vector<BLANK> blanks;
     std::vector<float>distance;
-    
+
     int selectedBlankIndex; // 记录选中的 blank 索引
     Sprite* pause_0;
     Sprite* pause_1;
+    Sprite* speed_0;
+    Sprite* speed_1;
     Sprite* pause_info;
     Sprite* menu;
     Sprite* adv_menu_bg;
@@ -58,8 +60,12 @@ public:
     Action* moveAction;
     // 在类的成员变量中添加标志位
     bool isPause0Visible = true;
-
-
+    EventListenerTouchOneByOne* touchListener;
+    EventListenerTouchOneByOne* listener_btn_green_b;
+    EventListenerTouchOneByOne* listener_3;
+    EventListenerTouchOneByOne* listener_home;
+    EventListenerTouchOneByOne* touchListener_2;
+    EventListenerMouse* mouseListener;
     int countdownValue = 3;
     int currentwave = 0;
     //bool isClear = false;//判断一波精灵有没有死完
@@ -81,7 +87,7 @@ public:
         std::pair<float, float>CenterPoint;
     };
     virtual void initGrid();
-   
+
     std::vector<barrier>Barrier;
 
     std::vector<Monster*>spriteOnStage;
@@ -91,10 +97,12 @@ public:
     void Brain();
     void updateSprite(float dt);
     //  bool onTouchBeganForBlank(cocos2d::Touch* touch, cocos2d::Event* event);
+    bool MyScene::onTouchBeganForSpeed(cocos2d::Touch* touch, cocos2d::Event* event);
     bool onTouchBeganForPause(cocos2d::Touch* touch, cocos2d::Event* event);
     bool onTouchBeganForMenu(cocos2d::Touch* touch, cocos2d::Event* event);
     void hideMenuItems();
     void showSelectSprite();
+    void MyScene::onExit();
     bool MyScene::onTouchBeganForBtnGreenB(cocos2d::Touch* touch, cocos2d::Event* event);
     bool MyScene::onTouchBeganForBtnBlueB(cocos2d::Touch* touch, cocos2d::Event* event);
     bool MyScene::onTouchBeganForBtnBlueL(cocos2d::Touch* touch, cocos2d::Event* event);

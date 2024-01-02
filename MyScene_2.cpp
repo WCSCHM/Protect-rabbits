@@ -1,5 +1,4 @@
 #include "MyScene_2.h"
-#include "MyScene.h"
 #include"Map.h"
 #include"Tower.h";
 #include"Bullet.h"
@@ -59,7 +58,9 @@ bool MyScene_2::init()
     Path->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
     this->addChild(Path, 1);
 
-  
+    /// 播放背景音乐
+    CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("BGMusic01.mp3", true);
+
 
     //在地图起点处放置标志物
     auto fflag = Sprite::create("start01.png");
@@ -69,7 +70,7 @@ bool MyScene_2::init()
     //在地图拐点放怪物
     auto nhSprite_2 = Sprite::create("L33.png");
     float dsh = nhSprite_2->getTextureRect().size.height;
-   
+
 
     Vec2 b1 = Vec2(165 * scaleX, 490 * scaleY);
     Vec2 b2 = Vec2(375 * scaleX, 490 * scaleY);
@@ -115,11 +116,11 @@ bool MyScene_2::init()
             Barrier[i].type = Sprite::create("B2.png");
             //dsh_s = Barrier[i].type->getTextureRect().size.height;
         }
-        else if (i ==3) {
+        else if (i == 3) {
             Barrier[i].type = Sprite::create("L2.png");
             //dsh_s2 = Barrier[i].type->getTextureRect().size.height;
         }
-        else if (i >=4&&i<=5) {
+        else if (i >= 4 && i <= 5) {
             Barrier[i].type = Sprite::create("B1.png");
             //dsh_s3 = Barrier[i].type->getTextureRect().size.height;
         }
@@ -127,7 +128,7 @@ bool MyScene_2::init()
             Barrier[i].type = Sprite::create("S2.png");
             //dsh_s4 = Barrier[i].type->getTextureRect().size.height;
         }
-        else if (i >= 11&&i<=13) {
+        else if (i >= 11 && i <= 13) {
             Barrier[i].type = Sprite::create("S3.png");
             //dsh_s5 = Barrier[i].type->getTextureRect().size.height;
         }
@@ -262,16 +263,86 @@ bool MyScene_2::init()
     top_bg->setPosition(Vec2(480 * scaleX, 610 * scaleY));
     this->addChild(top_bg, 2);
 
-    //暂停键
+    // 初始化 pause_0
     pause_0 = Sprite::create("pause_0.png");
     pause_0->setPosition(Vec2(800 * scaleX, 605 * scaleY));
-    this->addChild(pause_0, 2);
+    this->addChild(pause_0, 3);
 
+    // 初始化 pause_1
+    pause_1 = Sprite::create("pause_1.png");
+    pause_1->setPosition(Vec2(800 * scaleX, 605 * scaleY));
+    pause_1->setVisible(false);
+    this->addChild(pause_1, 4);
+
+    // 在初始化的地方添加触摸事件监听器
+    touchListener = EventListenerTouchOneByOne::create();
+    touchListener->setSwallowTouches(true);
+
+    touchListener->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForPause, this);
+    // 添加触摸事件监听器到事件分发器
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, pause_0);
+
+    //载入目录键
+    //目录
+    menu = Sprite::create("menu.png");
+    menu->setPosition(Vec2(880 * scaleX, 605 * scaleY));
+    this->addChild(menu, 3);
+    listener_3 = EventListenerTouchOneByOne::create();
+    listener_3->setSwallowTouches(true);
+    listener_3->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForMenu, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_3, this);
+    //按目录键之后的显示
+    adv_menu_bg = Sprite::create("adv_menu_bg.png");
+    adv_menu_bg->setPosition(Vec2(480 * scaleX, 340 * scaleY));
+    adv_menu_bg->setVisible(false);
+    this->addChild(adv_menu_bg, 4);
+    //按目录键之后的继续游戏键
+    btn_green_b = Sprite::create("btn_green_b.png");
+    btn_green_b->setPosition(Vec2(480 * scaleX, 422 * scaleY));
+    btn_green_b->setVisible(false);
+    this->addChild(btn_green_b, 5);
+    adv_menu_continue = Sprite::create("adv_menu_continue.png");
+    adv_menu_continue->setPosition(Vec2(480 * scaleX, 422 * scaleY));
+    adv_menu_continue->setVisible(false);
+    this->addChild(adv_menu_continue, 6);
+
+    listener_btn_green_b = EventListenerTouchOneByOne::create();
+    listener_btn_green_b->setSwallowTouches(true);
+    listener_btn_green_b->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnGreenB, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_btn_green_b, btn_green_b);
+
+    //按目录键之后的回主菜单键
+    btn_blue_b = Sprite::create("btn_blue_b.png");
+    btn_blue_b->setPosition(Vec2(480 * scaleX, 314 * scaleY));
+    btn_blue_b->setVisible(false);
+    this->addChild(btn_blue_b, 5);
+    adv_menu_home = Sprite::create("adv_menu_home.png");
+    adv_menu_home->setPosition(Vec2(480 * scaleX, 314 * scaleY));
+    adv_menu_home->setVisible(false);
+    this->addChild(adv_menu_home, 6);
+
+    listener_home = EventListenerTouchOneByOne::create();
+    listener_home->setSwallowTouches(true);
+    listener_home->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForBtnBlueB, this);
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener_home, btn_blue_b);
 
     //速度
-    auto speed_0 = Sprite::create("speed_0.png");
+    speed_0 = Sprite::create("speed_0.png");
     speed_0->setPosition(Vec2(700 * scaleX, 603 * scaleY));
     this->addChild(speed_0, 2);
+    speed_1 = Sprite::create("speed_1.png");
+    speed_1->setPosition(Vec2(700 * scaleX, 603 * scaleY));
+    speed_1->setVisible(false);
+    this->addChild(speed_1, 2);
+    // 在初始化的地方添加触摸事件监听器
+    touchListener_2 = EventListenerTouchOneByOne::create();
+    touchListener_2->setSwallowTouches(true);
+
+    touchListener_2->onTouchBegan = CC_CALLBACK_2(MyScene::onTouchBeganForSpeed, this);
+    // 添加触摸事件监听器到事件分发器
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener_2, speed_0);
+
+
     //第几波怪物的显示
     auto waves_bg = Sprite::create("waves_bg.png");
     waves_bg->setPosition(Vec2(480 * scaleX, 603 * scaleY));
@@ -310,12 +381,12 @@ bool MyScene_2::init()
     //放置萝卜
     // //萝卜的移动
     auto carrotsLayer = Carrots::create();
-    carrotsLayer->MoveforCarrots1(0.0,Vec2(760,480));
+    carrotsLayer->MoveforCarrots1(0.0, Vec2(760, 480));
     this->addChild(carrotsLayer, 1);
     //萝卜血量
     //10
     auto carrotsblo10 = Sprite::create("carrotsblo10.png");
-    carrotsblo10->setPosition(760,550);
+    carrotsblo10->setPosition(760, 550);
     this->addChild(carrotsblo10, 10);
     auto scalemove10 = ScaleBy::create(0.1, 0.3f);
     carrotsblo10->runAction(scalemove10);
@@ -388,14 +459,6 @@ bool MyScene_2::init()
 
     nhSprite_2->setPosition(Vec2(0, 0));
 
-    // 创建一个移动动作
-    moveAction = MoveTo::create(5.0f, Vec2(500, 500));
-
-    // 运行动作
-    nhSprite_2->runAction(moveAction);
-
-    // 添加精灵到场景
-    this->addChild(nhSprite_2, 2);
 
 
     // 怪物总波数
@@ -436,31 +499,31 @@ bool MyScene_2::init()
                 //spriteOnStage.clear();
                 //bloodbarForSprite.clear();
             }
-            countdownValue--;
-            if (countdownValue == 0)
-            {
-                countdownlabel->setVisible(false);
-                this->schedule([this](float dt) {
-                    if (!isTimeActive)
-                        return;
-                    static int count = 0;
-                    int T = rand() % 6 + 1;
-                    auto a = Monster::CreateMonster();
-                    auto aa = Bloodbar::CreateBloodbar();
-                    a->initMonster(InflectionPoint, distance, this, T);
-                    aa->initBloodbar(InflectionPoint, distance, this, T, a->blood[a->type]);
-                    spriteOnStage.push_back(a);
-                    bloodbarForSprite.push_back(aa);
-                    this->addChild(a, 3);
-                    this->addChild(aa, 3);
-                    count++;
-                    if (count % 10 == 0) {
-                        isTimeActive = false;
-                        currentwave++;
-                    }
-                    }, 1.0f, "generateSprite");
-            }
-            countdownlabel->setString(std::to_string(countdownValue));
+    countdownValue--;
+    if (countdownValue == 0)
+    {
+        countdownlabel->setVisible(false);
+        this->schedule([this](float dt) {
+            if (!isTimeActive)
+            return;
+        static int count = 0;
+        int T = rand() % 6 + 1;
+        auto a = Monster::CreateMonster();
+        auto aa = Bloodbar::CreateBloodbar();
+        a->initMonster(InflectionPoint, distance, this, T);
+        aa->initBloodbar(InflectionPoint, distance, this, T, a->blood[a->type]);
+        spriteOnStage.push_back(a);
+        bloodbarForSprite.push_back(aa);
+        this->addChild(a, 3);
+        this->addChild(aa, 3);
+        count++;
+        if (count % 10 == 0) {
+            isTimeActive = false;
+            currentwave++;
+        }
+            }, 1.0f, "generateSprite");
+    }
+    countdownlabel->setString(std::to_string(countdownValue));
 
         }, 1.0f, "update_countdownlabel");
 
@@ -469,80 +532,80 @@ bool MyScene_2::init()
     this->schedule([=](float dt)
         {
             int monstersReachedEnd = 0;
-            for (int i = 0; i < spriteOnStage.size(); i++) {
-                monstersReachedEnd += spriteOnStage[i]->isEnd;
-            }
+    for (int i = 0; i < spriteOnStage.size(); i++) {
+        monstersReachedEnd += spriteOnStage[i]->isEnd;
+    }
 
-            if (monstersReachedEnd > 0 && monstersReachedEnd < 4)
-            {
-                CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
-                // 调用 CarrotsLayer 中的方法来停止动画
-                carrotsLayer->stopAnimation1();
-                //开始第二段动画
-                carrotsLayer->MoveforCarrots2(0.0, Vec2(760, 480));
-            }
-            if (monstersReachedEnd >= 4)
-            {
-                CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
-                // 调用 CarrotsLayer 中的方法来停止动画
-                carrotsLayer->stopAnimation1();
-                //开始第二段动画
-                carrotsLayer->MoveforCarrots3(0.0, Vec2(760, 480));
-            }
-            if (monstersReachedEnd == 1)
-            {
-                carrotsblo10->setVisible(false);
-                carrotsblo9->setVisible(true);
-            }
-            if (monstersReachedEnd == 2)
-            {
-                carrotsblo9->setVisible(false);
-                carrotsblo8->setVisible(true);
-            }
-            if (monstersReachedEnd == 3)
-            {
-                carrotsblo8->setVisible(false);
-                carrotsblo7->setVisible(true);
-            }
-            if (monstersReachedEnd == 4)
-            {
-                carrotsblo7->setVisible(false);
-                carrotsblo6->setVisible(true);
-            }
-            if (monstersReachedEnd == 5)
-            {
-                carrotsblo6->setVisible(false);
-                carrotsblo5->setVisible(true);
-            }
-            if (monstersReachedEnd == 6)
-            {
-                carrotsblo5->setVisible(false);
-                carrotsblo4->setVisible(true);
-            }
-            if (monstersReachedEnd == 7)
-            {
-                carrotsblo4->setVisible(false);
-                carrotsblo3->setVisible(true);
-            }
-            if (monstersReachedEnd == 8)
-            {
-                carrotsblo3->setVisible(false);
-                carrotsblo2->setVisible(true);
-            }
-            if (monstersReachedEnd == 9)
-            {
-                carrotsblo2->setVisible(false);
-                carrotsblo1->setVisible(true);
-            }
-            if (monstersReachedEnd == 10)
-            {
-                carrotsblo1->setVisible(false);
-                auto labelend = Label::createWithTTF("GAME OVER", "fonts/Marker Felt.ttf", 120);
-                labelend->setPosition(480, 320);
-                labelend->setTextColor(Color4B::BLACK);
-                this->addChild(labelend, 5);
-                Director::getInstance()->pause();
-            }
+    if (monstersReachedEnd > 0 && monstersReachedEnd < 4)
+    {
+        CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
+        // 调用 CarrotsLayer 中的方法来停止动画
+        carrotsLayer->stopAnimation1();
+        //开始第二段动画
+        carrotsLayer->MoveforCarrots2(0.0, Vec2(760, 480));
+    }
+    if (monstersReachedEnd >= 4)
+    {
+        CCLOG("Number of monsters that reached the end: %d", monstersReachedEnd);
+        // 调用 CarrotsLayer 中的方法来停止动画
+        carrotsLayer->stopAnimation1();
+        //开始第二段动画
+        carrotsLayer->MoveforCarrots3(0.0, Vec2(760, 480));
+    }
+    if (monstersReachedEnd == 1)
+    {
+        carrotsblo10->setVisible(false);
+        carrotsblo9->setVisible(true);
+    }
+    if (monstersReachedEnd == 2)
+    {
+        carrotsblo9->setVisible(false);
+        carrotsblo8->setVisible(true);
+    }
+    if (monstersReachedEnd == 3)
+    {
+        carrotsblo8->setVisible(false);
+        carrotsblo7->setVisible(true);
+    }
+    if (monstersReachedEnd == 4)
+    {
+        carrotsblo7->setVisible(false);
+        carrotsblo6->setVisible(true);
+    }
+    if (monstersReachedEnd == 5)
+    {
+        carrotsblo6->setVisible(false);
+        carrotsblo5->setVisible(true);
+    }
+    if (monstersReachedEnd == 6)
+    {
+        carrotsblo5->setVisible(false);
+        carrotsblo4->setVisible(true);
+    }
+    if (monstersReachedEnd == 7)
+    {
+        carrotsblo4->setVisible(false);
+        carrotsblo3->setVisible(true);
+    }
+    if (monstersReachedEnd == 8)
+    {
+        carrotsblo3->setVisible(false);
+        carrotsblo2->setVisible(true);
+    }
+    if (monstersReachedEnd == 9)
+    {
+        carrotsblo2->setVisible(false);
+        carrotsblo1->setVisible(true);
+    }
+    if (monstersReachedEnd == 10)
+    {
+        carrotsblo1->setVisible(false);
+        auto labelend = Label::createWithTTF("GAME OVER", "fonts/Marker Felt.ttf", 120);
+        labelend->setPosition(480, 320);
+        labelend->setTextColor(Color4B::BLACK);
+        this->addChild(labelend, 5);
+        Director::getInstance()->pause();
+    }
         }, 0.1f, "monsterCheckScheduler");
 
     Brain();
@@ -571,4 +634,3 @@ bool MyScene_2::onTouchBeganForPause_2(cocos2d::Touch* touch, cocos2d::Event* ev
     }
     return false;
 }
-
